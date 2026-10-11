@@ -157,7 +157,7 @@ def execute_analysis(scenario: str, min_risk: float) -> Optional[Dict[str, Any]]
 
 def main():
     # Header & Identification
-    st.markdown('<span class="phase-badge">Phase 1 Foundation & Working Prototype</span>', unsafe_allow_html=True)
+    st.markdown('<span class="phase-badge">Phase 5 Integrated Release • Decision Support System</span>', unsafe_allow_html=True)
     st.markdown('<h1 class="main-header">TerraShield AI</h1>', unsafe_allow_html=True)
     st.markdown(
         '<p class="sub-header">AI-Assisted Reforestation Site Planning & Environmental Risk Analysis</p>',
@@ -168,9 +168,9 @@ def main():
     st.markdown(
         """
         <div class="warning-banner">
-            <strong>⚠️ Phase 1 Demonstration Notice:</strong> Sample geometries and attributes are 
-            illustrative and are not verified environmental observations. Results are not validated 
-            geotechnical predictions or planting prescriptions.
+            <strong>⚠️ Scientific Integrity Notice:</strong> Geotechnical limit-equilibrium models (FS, Wu-Waldron root reinforcement) 
+            use illustrative exploratory benchmark scenarios, not localized borehole measurements. Official legal forest reserve 
+            boundaries are unverified. Candidate recommendations are decision-support indices, not verified engineering designs.
         </div>
         """,
         unsafe_allow_html=True,
@@ -399,8 +399,8 @@ def main():
     # Footer Notice
     st.divider()
     st.caption(
-        "TerraShield AI Phase 1 Prototype | Designed for clean extensibility into geotechnical, "
-        "raster, and machine-learning modules in Phases 2-5."
+        "TerraShield AI Release Candidate • Integrated Geospatial & Geotechnical Decision Support System. "
+        "Verified datasets: NASA SRTM NASADEM (Wayanad Watershed) & Sentinel-2 L2A."
     )
 
 

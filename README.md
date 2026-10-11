@@ -1,238 +1,205 @@
 # TerraShield AI
 
-**AI-Assisted Reforestation Site Planning & Environmental Risk Analysis**
+**AI-Assisted Reforestation Site Planning & Environmental Risk Analysis**  
+*Integrated Decision Support System for Steep-Slope Landslide Hazard Mitigation*
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-forestgreen.svg)](https://www.python.org/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%20--%203.14-forestgreen.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.38+-FF4B4B.svg)](https://streamlit.io/)
-[![Phase](https://img.shields.io/badge/Phase-4%20of%205%20(Spatial%20Recommendation%20Engine)-blue.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-132%20Passing-brightgreen.svg)]()
+[![Release](https://img.shields.io/badge/Release-1.0.0--rc1%20(Phase%205%20Verified)-blue.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-152%20Passing-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/License-Proprietary%20%2F%20Research-lightgrey.svg)]()
 
 ---
 
-> **⚠️ Geotechnical & Scientific Disclaimer**  
-> Slope stability outputs and Factor of Safety ($FS$) values generated in Phase 3 are exploratory limit-equilibrium scenario models based on user-supplied parameters. They do **NOT** represent empirical landslide failure probabilities, certified site-specific geotechnical investigations, or silvicultural planting prescriptions.  
-> All real Wayanad rasters are georeferenced in native geographic `EPSG:4326 (WGS 84)` with measured mean slope of $9.49^\circ$.
+> **⚠️ Scientific Integrity & Geotechnical Disclaimer**  
+> Geotechnical stability outputs and Factor of Safety ($FS$) calculations in TerraShield AI are **exploratory limit-equilibrium benchmark scenario models**. They do **NOT** represent site-specific borehole measurements, certified geotechnical engineering predictions, or statutory planting mandates.  
+> Official legal forest reserve boundaries remain **unverified** pending state cadastral boundary datasets. Species recommendations remain **pending curated botanical data**.
 
 ---
 
-## 1. Project Overview & Intended Pilot Study Corridor
+## 1. Project Overview & Pilot Study Area
 
-TerraShield AI is an AI-assisted geospatial decision-support platform designed to identify high-impact reforestation locations and evaluate potential environmental benefits:
+TerraShield AI is an integrated geospatial and geotechnical decision-support system designed to identify high-impact reforestation sites and evaluate potential slope-stabilization benefits:
 
-1. **Landslide-Risk Mitigation:** Stabilizing steep slopes and reducing shallow slip risk through root-cohesion reinforcement.
-2. **Air-Quality Buffers:** Filtering particulate matter via strategic vegetative buffer placement near emissions sources.
-3. **Urban-Heat Mitigation:** Countering urban heat island effects through targeted microclimate cooling.
+1. **Landslide-Risk Mitigation:** Mechanistic evaluation of steep-slope stabilization via vegetative root-cohesion reinforcement.
+2. **Air-Quality Buffers:** Spatial planning for vegetative particulate capture.
+3. **Urban-Heat Mitigation:** Canopy density evaluation for urban heat alleviation.
 
-### Intended Project Pilot Study Region: Western Ghats Corridor
-TerraShield AI is designed for real-world deployment in the **Western Ghats Mountain Corridor (India)**, a UNESCO World Heritage biodiversity hotspot experiencing severe monsoon-triggered shallow landslides and agricultural soil loss.
-- **Pilot Region:** Western Ghats Corridor (Kerala, Tamil Nadu, Karnataka).
-- **Target Geographic Bounds:** `9.20° N – 12.00° N`, `75.80° E – 77.50° E`.
-- **Recommended Projected CRS:** `EPSG:32643 (WGS 84 / UTM Zone 43N)`.
-
-### The Prioritization Concept: Leverage Score ($L$)
-Candidate parcels are ranked using the project's central efficiency metric:
-
-$$\text{Leverage Score} = \frac{\text{Risk Reduction Achieved}}{\text{Trees Required}}$$
-
-$$L = \frac{\Delta R}{N}$$
-
-Where $\Delta R$ is the modeled risk reduction and $N$ is the required planting tree count.
+### Pilot Study Region: Wayanad Watershed (Western Ghats, Kerala, India)
+- **Pilot Study Area:** Wayanad Watershed, Western Ghats, Kerala, India.
+- **Geographic Bounding Box:** `11.55° N – 11.65° N`, `76.00° E – 76.10° E`.
+- **Verified Elevation Dataset:** NASA SRTM NASADEM Global 1 Arc-Second V001 (`NASADEM_HGT_n11e076`, $360 \times 360$ pixels in native `EPSG:4326 WGS 84`).
+- **Verified DEM SHA-256 Checksum:**
+  ```
+  680aa3cb46f4b7d148b2d62224ff8f8daa9591dcee5921d46c0f8c4c8a5ca2b6
+  ```
 
 ---
 
 ## 2. Three-Tier Data Provenance Model
 
-To avoid confusion between test mocks and ground-truth observations, TerraShield AI strictly enforces three data categories:
+To prevent confusion between synthetic test fixtures and genuine space-agency observations, TerraShield AI strictly enforces three data provenance tiers:
 
-1. **Tier 1 — Synthetic Test Fixtures (`data/sample/`):** Deterministic mock datasets (Cascade Foothills parcels, 10x10 test rasters) used exclusively for offline test verification.
-2. **Tier 2 — Real Environmental Observations (`data/raw/` or `data/uploads/`):** Genuine external inputs (NASA SRTM DEM, Sentinel-2 L2A tiles, ISRIC SoilGrids, WDPA reserves) uploaded or placed by users.
-3. **Tier 3 — Derived Geospatial Products (`data/processed/` & `data/artifacts/`):** Continuous GeoTIFFs (Slope, Aspect, NDVI) and GeoJSON outputs generated by the verified engine.
-
----
-
-## 3. Phase 2 Capabilities: Geospatial Data Engine
-
-- **GeoTIFF Ingestion & Metadata Inspection:** Decodes GeoTIFF elevation rasters, validating dimensions, band counts, data type, pixel resolutions, bounding coordinates, nodata masks, and coordinate reference systems (CRS).
-- **Multi-Metadata Tag Compatibility:** Supports standard `ModelPixelScaleTag` (33550) + `ModelTiepointTag` (33922), as well as 4x4 `ModelTransformationTag` (34264) matrices written by independent GIS tools (GDAL, QGIS, ArcGIS).
-- **Rotated Grid Detection:** Explicitly flags non-north-up rotated affine transforms (`ROTATED_TRANSFORM`) with actionable explanations.
-- **Topographic Terrain Processing:** Computes 2D spatial gradients ($dz/dx$ and $dz/dy$) using finite differences, deriving slope in degrees. Automatically applies geodesic ellipsoidal scaling when inputs use geographic (WGS84 degrees) coordinates.
-- **Terrain Aspect Topography:** Computes aspect as an azimuth in degrees from North ($0^\circ-360^\circ$ clockwise: 0°=N, 90°=E, 180°=S, 270°=W), flagging flat areas ($<0.1^\circ$ slope) as $-1.0^\circ$ (flat).
-- **Sentinel-2 NDVI Calculation:** Ingests Red (Band 4) and NIR (Band 8) bands, verifies identical spatial grids and CRS compatibility, and calculates $\text{NDVI} = \frac{\text{NIR} - \text{Red}}{\text{NIR} + \text{Red}}$ with zero-denominator protection.
-- **SoilGrids Validation:** Validates physical soil properties (clay, bulk density, pH, depth), depth intervals, and tabular coordinate column integrity against ISRIC SoilGrids standards.
-- **Protected-Area Spatial Exclusion:** Intersects candidate parcels with statutory conservation reserves, calculating overlap area in hectares and preserving legal justifications.
-- **Visual Previews & Secure Exports:** Renders multi-panel preview PNGs and exports continuous GeoTIFF layers (Slope, Aspect, NDVI) through traversal-proof artifact endpoints.
-
-## 4. Phase 3 Capabilities: Geotechnical Intelligence Engine
-
-- **Infinite Slope Stability Solver:** Implements classical limit-equilibrium physics for planar translational slope failures, computing driving shear stress ($\tau$), total/effective normal stress ($\sigma_n, \sigma'_n$), and baseline Factor of Safety ($FS_0$).
-- **Wu-Waldron Vegetative Root Reinforcement:** Evaluates additional root cohesion ($\Delta C = K \cdot T_r \cdot RAR$) under user-defined or experimental scenarios with automatic MPa-to-kPa conversion.
-- **Root-Reinforced Stability Analysis:** Evaluates reinforced Factor of Safety ($FS_{root}$) and stability gain ($\Delta FS = FS_{root} - FS_0$) against the project benchmark ($FS_{target} = 1.3$).
-- **Analytical Target Cohesion Solver:** Determines minimum required additional root cohesion ($\Delta C_{required}$) to reach $FS_{target}$, verified by numerical re-substitution ($|FS_{check} - FS_{target}| \le 10^{-4}$).
-- **Calibrated Tree-Density Linear Estimator:** Translates required Root Area Ratio into stem planting density ($stems/ha$) strictly when supported by empirical field calibration inputs.
-- **Deterministic Parameter Sensitivity:** Sweeps parameter bounds across $c', \phi', z, u, T_r, RAR$ to map stability response without confusing deterministic sensitivity with empirical probability of failure.
-- **Real Wayanad Raster Stability Engine:** Executes per-pixel geotechnical stability modeling on `wayanad_slope.tif` (129,600 valid pixels in native `EPSG:4326 WGS 84` with measured mean slope of $9.49^\circ$).
+1. **Tier 1 — Synthetic Test Fixtures (`data/sample/`):** Tracked in version control; deterministic fixtures (5 demo parcels, 10x10 synthetic DEM, synthetic Sentinel-2 Red/NIR bands) used for automated offline test suites.
+2. **Tier 2 — Real Environmental Observations (`data/raw/real/`):** Authentic satellite and terrain data (NASA SRTM NASADEM, Sentinel-2 L2A Red/NIR bands).
+3. **Tier 3 — Derived Geospatial & Geotechnical Products (`data/processed/` & `data/artifacts/`):** Continuous slope, aspect, NDVI, Factor of Safety, and multi-format recommendation exports generated by the verified engine.
 
 ---
 
-## 5. Phase 4 Capabilities: Spatial Recommendation Engine
-
-- **Candidate Parcel Generation:** Discretizes the pilot study area into candidate planning cells ($100\text{ m} - 1,000\text{ m}$, default $300\text{ m}$) using WGS 84 ellipsoidal curvatures ($M, N$).
-- **Geodesic Area Calculation:** Computes metric polygon parcel area in hectares via localized ellipsoidal Shoelace projection without degree multiplication ($1\text{ ha} = 10,000\text{ m}^2$).
-- **Multi-Resolution Zonal Statistics:** Aggregates terrain (30m DEM), topographic slope/aspect, geotechnical stability ($FS_{\text{base}}, FS_{\text{reinf}}, \Delta FS$), and Sentinel-2 NDVI (10m) without lossy resampling.
-- **Rule-Based Eligibility & Exclusions:** Enforces strict physical (slope $>45^\circ$), administrative (statutory reserves), and environmental (canopy proxy) disqualifications.
-- **Explainable Multi-Criteria Prioritization:** Evaluates eligible candidate parcels using normalized, weighted scoring components ($S_{\text{need}}, S_{\text{gain}}, S_{\text{area}}, S_{\text{conf}}$) with transparent 0–100 Priority Index rankings.
-- **Scientific Leverage Safeguards:** Distinguishes mechanistic stability change ($\Delta FS$) from empirical disaster risk reduction ($\Delta R$). Evaluates modeled stability gain per stem ($\Delta FS / N$) only when calibrated stem density exists; otherwise marks as `UNAVAILABLE`.
-- **Traceable Provenance & Disclosures:** Propagates exploratory scenario limitations, unverified protected-area statuses, and native species data availability.
-- **Multi-Format Exports:** Exports RFC 7946 GeoJSON parcels, CSV zonal metrics, CSV rankings, JSON run summaries, and self-contained HTML audit reports.
-- **Streamlit Dashboard Integration:** Features interactive parcel mapping, KPI summary cards, candidate parcel inspector with factor breakdowns, and direct download links.
-
-## 5. Architecture & Folder Structure
+## 3. System Architecture & Integrated Capabilities
 
 ```
-TERRASHIELD-AI/
-|-- backend/
-|   |-- app/
-|   |   |-- main.py                    # FastAPI entrypoint & router mounts
-|   |   |-- api/
-|   |   |   |-- routes.py              # Phase 1 routes (/parcels, /analysis)
-|   |   |   |-- geospatial_routes.py   # Phase 2 geospatial endpoints
-|   |   |   |-- geotechnical_routes.py # Phase 3 geotechnical endpoints
-|   |   |-- core/
-|   |   |   |-- config.py              # Settings, pilot bounds & upload limits
-|   |   |   |-- analysis_service.py    # Phase 1 leverage & exclusion solver
-|   |   |   |-- demo_data.py           # GeoJSON sample loader
-|   |   |   |-- geospatial/            # Phase 2 Geospatial Engine
-|   |   |       |-- coordinate_systems.py  # CRS & geodesic scaling
-|   |   |       |-- raster_loader.py       # GeoTIFF inspection & writer
-|   |   |       |-- terrain.py             # Elevation, slope & aspect solver
-|   |   |       |-- ndvi.py                # Sentinel-2 NDVI processor
-|   |   |       |-- vector_loader.py       # Shapely vector & intersection engine
-|   |   |       |-- soil_data.py           # SoilGrids metadata validator
-|   |   |       |-- artifacts.py           # Traversal-safe artifact manager
-|   |   |   |-- geotechnical/          # Phase 3 Geotechnical Engine
-|   |   |       |-- infinite_slope.py      # Limit-equilibrium infinite slope solver
-|   |   |       |-- root_cohesion.py       # Wu-Waldron root reinforcement
-|   |   |       |-- required_cohesion.py   # Target FS analytical solver
-|   |   |       |-- tree_density.py        # Calibrated stem density estimator
-|   |   |       |-- raster_analysis.py     # Real terrain raster processing
-|   |   |       |-- sensitivity.py         # Deterministic sensitivity sweeps
-|   |   |       |-- parameter_validation.py# Physical parameter bounds checking
-|   |   |       |-- provenance.py          # Data source & provenance schemas
-|   |   |       |-- models.py              # Geotechnical Pydantic models
-|   |   |-- schemas/
-|   |       |-- health.py              # Health check schema
-|   |       |-- parcel.py              # Parcel GeoJSON schemas
-|   |       |-- analysis.py            # Analysis request/response schemas
-|   |       |-- geospatial.py          # Terrain, NDVI, Soil & Vector schemas
-|   |       |-- geotechnical.py        # Geotechnical request/response schemas
-|   |-- tests/
-|       |-- test_api.py                # Phase 1 API integration tests
-|       |-- test_analysis_service.py   # Phase 1 leverage unit tests
-|       |-- test_geospatial.py         # Phase 2 terrain, NDVI, vector & hardening tests
-|       |-- test_geotechnical.py       # Phase 3 geotechnical & stability unit tests
-|
-|-- frontend/
-|   |-- app.py                         # Streamlit user interface
-|   |-- components/
-|       |-- map_view.py                # Folium map & parcel polygon styling
-|       |-- metrics_view.py            # KPI cards & pandas summary table
-|       |-- terrain_view.py            # DEM, NDVI & Environmental UI tabs
-|       |-- geotechnical_view.py       # Phase 3 Geotechnical Intelligence tab
-|
-|-- data/
-|   |-- sample/                        # Tracked synthetic test fixtures
-|   |   |-- demo_parcels.geojson       # Synthetic candidate parcels
-|   |   |-- synthetic_demo_dem.tif     # Synthetic test DEM fixture
-|   |   |-- synthetic_s2_b04_red.tif   # Synthetic Sentinel-2 Red band
-|   |   |-- synthetic_s2_b08_nir.tif   # Synthetic Sentinel-2 NIR band
-|   |   |-- sample_protected_areas.geojson # Synthetic protected area vector
-|   |-- raw/                           # Raw downloaded rasters (.gitignore)
-|   |-- processed/                     # Processed rasters (.gitignore)
-|   |-- uploads/                       # User uploads (.gitignore)
-|   |-- artifacts/                     # Generated PNGs and GeoTIFFs (.gitignore)
-|
-|-- docs/
-|   |-- architecture.md                # System architecture & 5-phase roadmap
-|   |-- real_data_acceptance_workflow.md # Real-data sourcing & verification guide
-|
-|-- requirements.txt                   # Pinned dependencies
-|-- .gitignore                         # Version control ignore rules
-|-- .env.example                       # Environment configuration template
-`-- README.md                          # Project documentation
++-----------------------------------------------------------------------------------+
+|                         Streamlit Frontend (frontend/app.py)                      |
+|                                                                                   |
+|  - 🗺️ Interactive Folium Map      - 📊 Prioritization Dashboard                  |
+|  - 🎯 Spatial Recommendations     - 📐 Geotechnical Intelligence                 |
+|  - 🏔️ DEM & Terrain Analysis       - 🌿 Sentinel-2 NDVI Analysis                  |
+|  - 🛡️ Environmental Constraints    - 📍 Pilot Corridor & Provenance Details       |
++------------------------------------+----------------------------------------------+
+                                     | HTTP REST (JSON & Multipart Form-Data)
+                                     v
++-----------------------------------------------------------------------------------+
+|                         FastAPI Backend (backend/app/main.py)                     |
+|                                                                                   |
+|  - /health                        -> Operational status, version, mode            |
+|  - /api/v1/parcels                -> Candidate parcels FeatureCollection          |
+|  - /api/v1/analysis               -> Legacy demonstration leverage prioritization |
+|  - /api/v1/geospatial/*           -> GeoTIFF inspection, slope, aspect, NDVI      |
+|  - /api/v1/geotechnical/*         -> Infinite slope, Wu-Waldron root cohesion     |
+|  - /api/v1/recommendations/*      -> Multi-criteria parcel ranking & exports      |
++------------------------------------+----------------------------------------------+
 ```
+
+### Integrated Capabilities Across Phases 1–5:
+- **Geospatial Engine (Phase 2):** Pure-Python GeoTIFF tag inspection (affine transforms, 4x4 matrix transforms), signed `int16` elevation, 2D central-difference slope and aspect azimuth with WGS 84 ellipsoidal scaling, Sentinel-2 NDVI with zero-denominator safety, SoilGrids validation, and statutory reserve vector intersections.
+- **Geotechnical Engine (Phase 3):** Limit-equilibrium infinite slope Factor of Safety ($FS_0$), Wu-Waldron vegetative root reinforcement ($\Delta C = K \cdot T_r \cdot RAR$), reinforced Factor of Safety ($FS_{root}$), analytical target cohesion solver for $FS_{target} = 1.3$, calibrated stem density estimator with biological carrying capacity cap, and parameter sensitivity sweeps.
+- **Spatial Recommendation Engine (Phase 4):** Ellipsoidal candidate parcel grid generation (default 300m cells), polygon geodesic area calculation in hectares, multi-resolution zonal statistics, rule-based physical ($>45^\circ$), administrative, and canopy exclusions, explainable multi-criteria priority index ($0–100$), non-discriminative ranking suppression with tie warnings, and greedy budget allocation optimizer.
+- **Validation, Integration & Release (Phase 5):** End-to-end integration test suite, API error contract hardening, HTML report XSS sanitization, local Windows PowerShell startup/smoke scripts, and sub-second hardware performance profiling.
 
 ---
 
-## 5. Dependencies & Installation
+## 4. Local Installation & Quick Start (Windows)
 
-### Core Packages
-- **Backend:** FastAPI, Uvicorn, Pydantic, HTTPX, Requests, Python-Multipart.
-- **Geospatial & Numerics:** NumPy, SciPy, Shapely, Tifffile, ImageIO, Matplotlib, UTM, GeographicLib.
-- **Frontend & Mapping:** Streamlit, Folium, Streamlit-Folium, Pandas.
-- **Testing:** Pytest.
+### Prerequisites
+- Windows 10 / Windows 11 (64-bit)
+- Python 3.10 to 3.14 installed (Verified on **Python 3.14.7**)
+- PowerShell 5.1 or PowerShell 7+
 
-### Installation
+### Step-by-Step Installation:
 ```powershell
+# 1. Clone repository and navigate to root directory
+cd c:\TERRASHIELD AI
+
+# 2. Create virtual environment
 python -m venv .venv
+
+# 3. Allow local script execution (if restricted)
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# 4. Activate virtual environment
 .\.venv\Scripts\Activate.ps1
+
+# 5. Install pinned dependencies
 pip install -r requirements.txt
 ```
 
 ---
 
-## 6. Running the Application
+## 5. Running the Application
 
-### Terminal 1: Start the FastAPI Backend
+### Option A: Using Windows PowerShell Scripts (Recommended)
+
+Open two PowerShell terminals:
+
 ```powershell
-.\.venv\Scripts\uvicorn.exe backend.app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-- API Base: `http://127.0.0.1:8000`
-- Swagger Interactive Docs: `http://127.0.0.1:8000/docs`
-- Health Check: `http://127.0.0.1:8000/health`
+# Terminal 1: Launch Backend API (http://127.0.0.1:8000)
+.\scripts\start_backend.ps1
 
-### Terminal 2: Start the Streamlit Frontend
+# Terminal 2: Launch Frontend Dashboard (http://127.0.0.1:8501)
+.\scripts\start_frontend.ps1
+```
+
+### Option B: Direct Commands
 ```powershell
-.\.venv\Scripts\streamlit.exe run frontend/app.py
+# Terminal 1: Backend
+.\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+
+# Terminal 2: Frontend
+.\.venv\Scripts\streamlit.exe run frontend/app.py --server.port 8501 --server.address 127.0.0.1
 ```
-- Streamlit application opens at `http://localhost:8501`.
+
+- **Interactive API Documentation:** `http://127.0.0.1:8000/docs`
+- **Interactive Streamlit Dashboard:** `http://127.0.0.1:8501`
 
 ---
 
-## 7. API Endpoints (Phase 2)
+## 6. Testing & Quality Assurance
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health` | Service health status and runtime mode |
-| `GET` | `/api/v1/parcels` | Demonstration candidate parcels GeoJSON |
-| `POST` | `/api/v1/analysis` | Phase 1 prioritization analysis |
-| `GET` | `/api/v1/geospatial/status` | Engine capability, supported formats, and pilot corridor info |
-| `POST` | `/api/v1/geospatial/dem/inspect` | Upload & inspect DEM GeoTIFF metadata |
-| `POST` | `/api/v1/geospatial/dem/terrain` | Compute elevation, slope (deg), aspect (azimuth) |
-| `POST` | `/api/v1/geospatial/ndvi` | Compute Sentinel-2 NDVI from Red & NIR bands |
-| `POST` | `/api/v1/geospatial/soil/validate` | Validate SoilGrids metadata and parameters |
-| `POST` | `/api/v1/geospatial/vectors/validate` | Validate GeoJSON vector geometry |
-| `POST` | `/api/v1/geospatial/vectors/intersections` | Evaluate parcel vs protected-area spatial overlap |
-| `GET` | `/api/v1/geospatial/artifacts/{id}` | Download generated GeoTIFF or preview PNG |
-
----
-
-## 8. Real-Data Ingestion & Verification
-
-For exact procedures to source, convert, and verify real environmental datasets, refer to the dedicated guide:
-👉 **[Real-Data Acceptance & Verification Workflow](docs/real_data_acceptance_workflow.md)**
-
----
-
-## 9. Running the Automated Test Suite
-
-Execute the full suite with pytest:
-
+### Execute Automated Test Suite
+```powershell
+.\scripts\run_tests.ps1
+```
+Or directly:
 ```powershell
 .\.venv\Scripts\pytest.exe -v
 ```
+**Verification Baseline:** **152 passed, 0 failed** in ~5.0 seconds. 100% offline reproducible.
 
-**Verification Results:**
-- **62 total tests** executed and passing.
-- 26 tests cover Phase 1 foundation, APIs, calculations, and GeoJSON structure.
-- 36 tests cover Phase 2 DEM inspection, 4x4 matrix transforms, signed `int16` SRTM elevation, unsigned `uint16` Sentinel-2 DNs, rotated transform detection, cardinal/diagonal directional slopes (North, South, East, West, NW, SW), nodata boundary isolation, NDVI zero-denominator protection, grid alignment checks, SoilGrids validation, vector spatial intersection, and artifact security.
+### Execute Operational Smoke Test
+Validates API endpoints, NASADEM checksum, geotechnical solvers, and UI components:
+```powershell
+.\scripts\smoke_test.ps1
+```
+
+### Execute Hardware Performance Benchmark
+Profiles local hardware execution times across all core workflows:
+```powershell
+.\.venv\Scripts\python.exe scripts\benchmark_phase5.py
+```
+
+---
+
+## 7. Directory & Artifact Structure
+
+```
+c:\TERRASHIELD AI\
+├── backend/
+│   ├── app/
+│   │   ├── main.py                    # FastAPI entrypoint & router mounts
+│   │   ├── api/                       # API router endpoints (Parcels, Geospatial, Geotech, Recommendations)
+│   │   ├── core/                      # Geospatial, geotechnical, and recommendation calculation engines
+│   │   └── schemas/                   # Pydantic request & response models
+│   └── tests/                         # Automated test suite (152 tests across 8 modules)
+├── frontend/
+│   ├── app.py                         # Streamlit multi-tab application entrypoint
+│   └── components/                    # Folium maps, KPI cards, and engine tabs
+├── data/
+│   ├── sample/                        # Tracked synthetic test fixtures (Tier 1)
+│   ├── raw/real/                      # NASA NASADEM & Sentinel-2 input rasters (Tier 2)
+│   ├── processed/                     # Derived continuous rasters & recommendation outputs (Tier 3)
+│   └── artifacts/                     # Preview images & temporary file slices
+├── scripts/
+│   ├── start_backend.ps1              # Backend PowerShell launcher
+│   ├── start_frontend.ps1             # Frontend PowerShell launcher
+│   ├── run_tests.ps1                  # Test runner script
+│   ├── smoke_test.ps1                 # Operational sanity smoke test
+│   └── benchmark_phase5.py            # Local hardware performance benchmark
+├── docs/
+│   ├── architecture.md                # System architecture & integration map
+│   ├── local_setup.md                 # Fresh checkout developer setup guide
+│   ├── phase5_validation_report.md    # Formal release validation audit report
+│   ├── recommendation_methodology.md  # Multi-criteria scoring formulation
+│   └── geotechnical_model.md          # Geotechnical limit-equilibrium derivations
+├── requirements.txt                   # Pinned Python package dependencies
+├── CHANGELOG.md                       # Project revision history across Phases 1–5
+└── README.md                          # Primary project documentation
+```
+
+---
+
+## 8. Release Status & Scientific Caveat
+
+- **Software Status:** **Release Candidate 1 (`v1.0.0-rc1`)** — All software validation tests passed.
+- **Scientific Status:** Limit-equilibrium geotechnical stability and Wu-Waldron root-cohesion calculations are mathematically verified exploratory benchmark scenarios. Field geotechnical borehole measurements and authoritative legal reserve cadastres remain required prior to civil engineering works or regulatory enforcement.

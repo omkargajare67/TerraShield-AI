@@ -16,7 +16,7 @@ app = FastAPI(
     version=settings.VERSION,
     description=(
         "TerraShield AI - AI-Assisted Reforestation Site Planning & "
-        "Environmental Risk Analysis (Phase 1 Foundation Prototype)"
+        "Environmental Risk Analysis (Integrated Decision Support System)"
     ),
     docs_url="/docs",
     redoc_url="/redoc",
@@ -46,7 +46,7 @@ async def health_check() -> HealthResponse:
         version=settings.VERSION,
         mode=settings.APP_MODE,
         timestamp=datetime.now(timezone.utc),
-        message="TerraShield AI Phase 1 API operational.",
+        message="TerraShield AI API operational.",
     )
 
 

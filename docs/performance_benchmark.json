@@ -1,0 +1,44 @@
+[
+  {
+    "workflow": "FastAPI App Initialization",
+    "dataset_size": "Decoupled FastAPI router & middleware tree",
+    "elapsed_seconds": 0.7273,
+    "status": "SUCCESS"
+  },
+  {
+    "workflow": "DEM Raster Load & Inspection",
+    "dataset_size": "360 x 360 px (float32)",
+    "elapsed_seconds": 0.0024,
+    "status": "SUCCESS"
+  },
+  {
+    "workflow": "Terrain Slope & Aspect Derivation",
+    "dataset_size": "360 x 360 px (360x360)",
+    "elapsed_seconds": 0.4224,
+    "status": "SUCCESS"
+  },
+  {
+    "workflow": "Sentinel-2 NDVI Derivation",
+    "dataset_size": "1099 x 1099 px (Red + NIR bands)",
+    "elapsed_seconds": 0.3255,
+    "status": "SUCCESS"
+  },
+  {
+    "workflow": "Candidate Parcel Generation (300m Grid)",
+    "dataset_size": "1369 candidate parcels across 11.55-11.65\u00b0N, 76.00-76.10\u00b0E",
+    "elapsed_seconds": 0.0173,
+    "status": "SUCCESS"
+  },
+  {
+    "workflow": "Complete Recommendation Pipeline API Run",
+    "dataset_size": "1369 parcels evaluated zonal stats & ranked",
+    "elapsed_seconds": 0.6238,
+    "status": "SUCCESS"
+  },
+  {
+    "workflow": "Multi-Format Report Generation (GeoJSON, CSV, JSON, HTML)",
+    "dataset_size": "5 export files generated",
+    "elapsed_seconds": 0.0089,
+    "status": "SUCCESS"
+  }
+]

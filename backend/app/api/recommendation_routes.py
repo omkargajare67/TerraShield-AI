@@ -298,12 +298,19 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
 
     # 5. Rank eligible parcels
     weights_in = req.scoring_weights
-    scoring_w = ScoringWeights(
-        weight_geotechnical_need=weights_in.weight_geotechnical_need if weights_in else 0.35,
-        weight_stability_gain=weights_in.weight_stability_gain if weights_in else 0.30,
-        weight_plantable_area=weights_in.weight_plantable_area if weights_in else 0.20,
-        weight_data_confidence=weights_in.weight_data_confidence if weights_in else 0.15,
-    )
+    try:
+        scoring_w = ScoringWeights(
+            weight_geotechnical_need=weights_in.weight_geotechnical_need if weights_in else 0.35,
+            weight_stability_gain=weights_in.weight_stability_gain if weights_in else 0.30,
+            weight_plantable_area=weights_in.weight_plantable_area if weights_in else 0.20,
+            weight_data_confidence=weights_in.weight_data_confidence if weights_in else 0.15,
+        )
+        scoring_w.normalized()
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
     norm_in = req.normalization_config
     norm_cfg = NormalizationConfig(
@@ -312,13 +319,16 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
         max_delta_fs_ref=norm_in.max_delta_fs_ref if norm_in else 15.0,
         max_area_ref_ha=norm_in.max_area_ref_ha if norm_in else 15.0,
     )
-    try:
-        policy_enum = (
-            MissingDataPolicy(req.missing_data_policy.upper())
-            if req.missing_data_policy
-            else MissingDataPolicy.RENORMALIZE_AVAILABLE
-        )
-    except (ValueError, AttributeError):
+    if req.missing_data_policy:
+        try:
+            policy_enum = MissingDataPolicy(req.missing_data_policy.upper())
+        except (ValueError, KeyError, AttributeError):
+            valid_policies = [p.value for p in MissingDataPolicy]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported missing_data_policy '{req.missing_data_policy}'. Supported policies: {', '.join(valid_policies)}",
+            )
+    else:
         policy_enum = MissingDataPolicy.RENORMALIZE_AVAILABLE
 
     ranking_result = rank_candidate_parcels(

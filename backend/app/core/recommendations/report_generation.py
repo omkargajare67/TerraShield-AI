@@ -1,6 +1,7 @@
 """Export generation engine for GeoJSON, CSV, JSON summary, and HTML audit reports."""
 
 import csv
+import html
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -306,30 +307,36 @@ def export_recommendation_report_html(
         base_fs_val = f"{m.get('fs_baseline_mean'):.2f}" if m.get('fs_baseline_mean') is not None else "N/A"
         gain_val = f"+{m.get('fs_delta_mean'):.2f}" if m.get('fs_delta_mean') is not None else "N/A"
         rank_label = f"#{p.rank}" if p.rank is not None else "Tied"
+        primary_driver = exp.primary_ranking_drivers[0] if exp.primary_ranking_drivers else "N/A"
+
+        safe_rank_label = html.escape(str(rank_label))
+        safe_parcel_id = html.escape(str(p.parcel_id))
+        safe_driver = html.escape(str(primary_driver))
 
         rows_html.append(f"""
         <tr>
-            <td style="font-weight: 700; color: #10b981;">{rank_label}</td>
-            <td style="font-family: monospace; font-weight: 600;">{p.parcel_id}</td>
+            <td style="font-weight: 700; color: #10b981;">{safe_rank_label}</td>
+            <td style="font-family: monospace; font-weight: 600;">{safe_parcel_id}</td>
             <td style="font-weight: 700; color: #0284c7;">{sc.priority_score_index:.1f}</td>
             <td>{p.plantable_area_ha:.2f} ha</td>
             <td>{m.get('slope_mean_deg', 0.0):.1f}°</td>
             <td>{base_fs_val}</td>
             <td style="color: #10b981; font-weight: 600;">{gain_val}</td>
-            <td style="font-size: 0.85rem; color: #4b5563;">{exp.primary_ranking_drivers[0] if exp.primary_ranking_drivers else 'N/A'}</td>
+            <td style="font-size: 0.85rem; color: #4b5563;">{safe_driver}</td>
         </tr>
         """)
 
     non_diff_banner = ""
     if not ranking_result.is_discriminative:
+        safe_warning = html.escape(str(ranking_result.differentiation_warning or ""))
         non_diff_banner = f"""
         <div style="background-color: #fff3cd; border: 2px solid #ffc107; color: #856404; padding: 1.25rem; border-radius: 8px; margin-bottom: 2rem;">
             <h3 style="margin-top: 0; color: #856404;">⚠️ Non-Discriminative Ranking Notice</h3>
-            <p style="margin-bottom: 0;">{ranking_result.differentiation_warning}</p>
+            <p style="margin-bottom: 0;">{safe_warning}</p>
         </div>
         """
 
-    disclosures_html = "".join([f"<li>{d}</li>" for d in provenance.scientific_disclosures])
+    disclosures_html = "".join([f"<li>{html.escape(str(d))}</li>" for d in provenance.scientific_disclosures])
     norm = ranking_result.normalization_config
 
     missing_info = (
@@ -337,6 +344,12 @@ def export_recommendation_report_html(
         if ranking_result.missing_components_detected
         else "All input layers verified and active."
     )
+    safe_missing_info = html.escape(str(missing_info))
+    safe_run_id = html.escape(str(ranking_result.run_id))
+    safe_timestamp = html.escape(str(ranking_result.ranking_timestamp))
+    safe_geo_note = html.escape(str(provenance.geotechnical_scenario_note))
+    safe_pa_status = html.escape(str(provenance.protected_area_verification_status))
+    safe_policy = html.escape(str(ranking_result.applied_missing_data_policy))
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -456,9 +469,9 @@ def export_recommendation_report_html(
 <body>
     <div class="container">
         <div class="header">
-            <span class="badge">Phase 4 Verified Audit</span>
+            <span class="badge">Phase 5 Integrated Audit</span>
             <h1>TerraShield AI — Spatial Planting Recommendation Report</h1>
-            <p style="color: #64748b; margin: 0;">Run ID: <code>{ranking_result.run_id}</code> | Generated: {ranking_result.ranking_timestamp}</p>
+            <p style="color: #64748b; margin: 0;">Run ID: <code>{safe_run_id}</code> | Generated: {safe_timestamp}</p>
         </div>
 
         {non_diff_banner}
@@ -466,13 +479,13 @@ def export_recommendation_report_html(
         <div class="alert">
             <strong>⚠️ Scientific Integrity & Provenance Disclosure:</strong><br>
             • <strong>Verified DEM Source:</strong> NASA SRTM NASADEM Global 1 Arc-Second V001 (NASADEM_HGT_n11e076, SHA256: 680aa3cb46f4b7d148b2d62224ff8f8daa9591dcee5921d46c0f8c4c8a5ca2b6).<br>
-            • <strong>Geotechnical Model:</strong> {provenance.geotechnical_scenario_note}<br>
-            • <em>Protected Area Clearance:</em> {provenance.protected_area_verification_status}
+            • <strong>Geotechnical Model:</strong> {safe_geo_note}<br>
+            • <em>Protected Area Clearance:</em> {safe_pa_status}
         </div>
 
         <div class="meta-card">
             <strong>⚙️ Prioritization Methodology & Normalization Settings:</strong><br>
-            • <strong>Missing Data Policy:</strong> <code>{ranking_result.applied_missing_data_policy}</code> ({missing_info})<br>
+            • <strong>Missing Data Policy:</strong> <code>{safe_policy}</code> ({safe_missing_info})<br>
             • <strong>Configured Normalization Divisors:</strong> Modeled Stability Gain Divisor = <code>{norm.max_delta_fs_ref} ΔFS</code> | Plantable Area Divisor = <code>{norm.max_area_ref_ha} ha</code> | Benchmark FS Target = <code>{norm.fs_target}</code>
         </div>
 
@@ -524,7 +537,7 @@ def export_recommendation_report_html(
         </ul>
 
         <div class="footer">
-            TerraShield AI • Phase 4 Spatial Recommendation Engine • Native WGS 84 / Ellipsoidal Metric Projections
+            TerraShield AI • Integrated Geospatial & Geotechnical Decision Support System • Native WGS 84 / Ellipsoidal Metric Projections
         </div>
     </div>
 </body>
