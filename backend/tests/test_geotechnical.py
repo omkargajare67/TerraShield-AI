@@ -400,8 +400,19 @@ def test_18_and_19_raster_analysis_metadata_and_nodata_preservation():
         calibration=cal,
     )
 
-    # 18. Check NoData preservation
+    # 18. Check NoData preservation and slope statistics audit
     assert summary["valid_pixels"] == 129600
+    assert summary["crs"] == "EPSG:4326 (WGS 84)"
+    assert summary["scenario_assumptions"]["is_illustrative_scenario"] is True
+    assert summary["scenario_assumptions"]["scenario_type"] == "ILLUSTRATIVE_EXPLORATORY_BENCHMARK"
+
+    # Verify measured terrain slope statistics
+    slope_stats = summary["statistics"]["slope_degrees"]
+    assert slope_stats["min"] == 0.0
+    assert slope_stats["max"] == 58.07
+    assert slope_stats["mean"] == 9.49
+    assert slope_stats["median"] == 8.6
+    assert slope_stats["flat_pixels_below_0_1_deg"] == 721
 
     # 19. Check metadata on generated GeoTIFF
     out_fs_path = settings.PROCESSED_DIR / "geotechnical" / "wayanad_fs_baseline.tif"
@@ -409,10 +420,38 @@ def test_18_and_19_raster_analysis_metadata_and_nodata_preservation():
     arr, meta = inspect_geotiff(out_fs_path)
     assert meta.width == 360
     assert meta.height == 360
-    assert meta.crs is not None
-    assert meta.bounds["minx"] < meta.bounds["maxx"]
-    assert meta.bounds["miny"] < meta.bounds["maxy"]
+    assert meta.crs == "EPSG:4326 (WGS 84)"
+    assert meta.is_geographic is True
+    assert math.isclose(meta.bounds["minx"], 76.0, abs_tol=1e-5)
+    assert math.isclose(meta.bounds["maxx"], 76.1, abs_tol=1e-5)
+    assert math.isclose(meta.bounds["miny"], 11.55, abs_tol=1e-5)
+    assert math.isclose(meta.bounds["maxy"], 11.65, abs_tol=1e-5)
     assert meta.nodata_value == -9999.0
+
+
+def test_24_crs_alignment_between_real_dem_slope_and_geotech_outputs():
+    """Verify exact coordinate alignment and CRS match across DEM, Slope, and Geotech outputs."""
+    dem_path = Path("data/raw/real/wayanad_dem.tif")
+    slope_path = Path("data/processed/real/wayanad_slope.tif")
+    geotech_path = Path("data/processed/geotechnical/wayanad_fs_baseline.tif")
+
+    if not (dem_path.exists() and slope_path.exists() and geotech_path.exists()):
+        pytest.skip("Wayanad raster products not found on disk")
+
+    _, dem_meta = inspect_geotiff(dem_path)
+    _, slope_meta = inspect_geotiff(slope_path)
+    _, geo_meta = inspect_geotiff(geotech_path)
+
+    # All must share EPSG:4326 WGS 84
+    assert dem_meta.crs == "EPSG:4326 (WGS 84)"
+    assert slope_meta.crs == "EPSG:4326 (WGS 84)"
+    assert geo_meta.crs == "EPSG:4326 (WGS 84)"
+
+    # All must share identical pixel scale and bounds
+    assert math.isclose(dem_meta.pixel_size_x, slope_meta.pixel_size_x, rel_tol=1e-6)
+    assert math.isclose(slope_meta.pixel_size_x, geo_meta.pixel_size_x, rel_tol=1e-6)
+    assert math.isclose(dem_meta.bounds["minx"], geo_meta.bounds["minx"], abs_tol=1e-6)
+    assert math.isclose(dem_meta.bounds["maxy"], geo_meta.bounds["maxy"], abs_tol=1e-6)
 
 
 def test_20_secure_artifact_retrieval_prevents_traversal():

@@ -5,14 +5,14 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-forestgreen.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.38+-FF4B4B.svg)](https://streamlit.io/)
-[![Phase](https://img.shields.io/badge/Phase-2%20of%205%20(Geospatial%20Data%20Engine)-blue.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-62%20Passing-brightgreen.svg)]()
+[![Phase](https://img.shields.io/badge/Phase-3%20of%205%20(Geotechnical%20Intelligence%20Engine)-blue.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-85%20Passing-brightgreen.svg)]()
 
 ---
 
-> **⚠️ Geospatial & Environmental Disclaimer**  
-> Terrain slope and aspect derived in Phase 2 are physical terrain parameters, not validated geotechnical predictions or landslide hazard prescriptions.  
-> Slope steepness is one environmental parameter among many; physical Factor of Safety ($FS$) and root-reinforcement equations will be evaluated in Phase 3.
+> **⚠️ Geotechnical & Scientific Disclaimer**  
+> Slope stability outputs and Factor of Safety ($FS$) values generated in Phase 3 are exploratory limit-equilibrium scenario models based on user-supplied parameters. They do **NOT** represent empirical landslide failure probabilities, certified site-specific geotechnical investigations, or silvicultural planting prescriptions.  
+> All real Wayanad rasters are georeferenced in native geographic `EPSG:4326 (WGS 84)` with measured mean slope of $9.49^\circ$.
 
 ---
 
@@ -63,9 +63,19 @@ To avoid confusion between test mocks and ground-truth observations, TerraShield
 - **Protected-Area Spatial Exclusion:** Intersects candidate parcels with statutory conservation reserves, calculating overlap area in hectares and preserving legal justifications.
 - **Visual Previews & Secure Exports:** Renders multi-panel preview PNGs and exports continuous GeoTIFF layers (Slope, Aspect, NDVI) through traversal-proof artifact endpoints.
 
+## 4. Phase 3 Capabilities: Geotechnical Intelligence Engine
+
+- **Infinite Slope Stability Solver:** Implements classical limit-equilibrium physics for planar translational slope failures, computing driving shear stress ($\tau$), total/effective normal stress ($\sigma_n, \sigma'_n$), and baseline Factor of Safety ($FS_0$).
+- **Wu-Waldron Vegetative Root Reinforcement:** Evaluates additional root cohesion ($\Delta C = K \cdot T_r \cdot RAR$) under user-defined or experimental scenarios with automatic MPa-to-kPa conversion.
+- **Root-Reinforced Stability Analysis:** Evaluates reinforced Factor of Safety ($FS_{root}$) and stability gain ($\Delta FS = FS_{root} - FS_0$) against the project benchmark ($FS_{target} = 1.3$).
+- **Analytical Target Cohesion Solver:** Determines minimum required additional root cohesion ($\Delta C_{required}$) to reach $FS_{target}$, verified by numerical re-substitution ($|FS_{check} - FS_{target}| \le 10^{-4}$).
+- **Calibrated Tree-Density Linear Estimator:** Translates required Root Area Ratio into stem planting density ($stems/ha$) strictly when supported by empirical field calibration inputs.
+- **Deterministic Parameter Sensitivity:** Sweeps parameter bounds across $c', \phi', z, u, T_r, RAR$ to map stability response without confusing deterministic sensitivity with empirical probability of failure.
+- **Real Wayanad Raster Stability Engine:** Executes per-pixel geotechnical stability modeling on `wayanad_slope.tif` (129,600 valid pixels in native `EPSG:4326 WGS 84` with measured mean slope of $9.49^\circ$).
+
 ---
 
-## 4. Architecture & Folder Structure
+## 5. Architecture & Folder Structure
 
 ```
 TERRASHIELD-AI/
@@ -75,6 +85,7 @@ TERRASHIELD-AI/
 |   |   |-- api/
 |   |   |   |-- routes.py              # Phase 1 routes (/parcels, /analysis)
 |   |   |   |-- geospatial_routes.py   # Phase 2 geospatial endpoints
+|   |   |   |-- geotechnical_routes.py # Phase 3 geotechnical endpoints
 |   |   |-- core/
 |   |   |   |-- config.py              # Settings, pilot bounds & upload limits
 |   |   |   |-- analysis_service.py    # Phase 1 leverage & exclusion solver
@@ -87,15 +98,27 @@ TERRASHIELD-AI/
 |   |   |       |-- vector_loader.py       # Shapely vector & intersection engine
 |   |   |       |-- soil_data.py           # SoilGrids metadata validator
 |   |   |       |-- artifacts.py           # Traversal-safe artifact manager
+|   |   |   |-- geotechnical/          # Phase 3 Geotechnical Engine
+|   |   |       |-- infinite_slope.py      # Limit-equilibrium infinite slope solver
+|   |   |       |-- root_cohesion.py       # Wu-Waldron root reinforcement
+|   |   |       |-- required_cohesion.py   # Target FS analytical solver
+|   |   |       |-- tree_density.py        # Calibrated stem density estimator
+|   |   |       |-- raster_analysis.py     # Real terrain raster processing
+|   |   |       |-- sensitivity.py         # Deterministic sensitivity sweeps
+|   |   |       |-- parameter_validation.py# Physical parameter bounds checking
+|   |   |       |-- provenance.py          # Data source & provenance schemas
+|   |   |       |-- models.py              # Geotechnical Pydantic models
 |   |   |-- schemas/
 |   |       |-- health.py              # Health check schema
 |   |       |-- parcel.py              # Parcel GeoJSON schemas
 |   |       |-- analysis.py            # Analysis request/response schemas
 |   |       |-- geospatial.py          # Terrain, NDVI, Soil & Vector schemas
+|   |       |-- geotechnical.py        # Geotechnical request/response schemas
 |   |-- tests/
 |       |-- test_api.py                # Phase 1 API integration tests
 |       |-- test_analysis_service.py   # Phase 1 leverage unit tests
 |       |-- test_geospatial.py         # Phase 2 terrain, NDVI, vector & hardening tests
+|       |-- test_geotechnical.py       # Phase 3 geotechnical & stability unit tests
 |
 |-- frontend/
 |   |-- app.py                         # Streamlit user interface
@@ -103,6 +126,7 @@ TERRASHIELD-AI/
 |       |-- map_view.py                # Folium map & parcel polygon styling
 |       |-- metrics_view.py            # KPI cards & pandas summary table
 |       |-- terrain_view.py            # DEM, NDVI & Environmental UI tabs
+|       |-- geotechnical_view.py       # Phase 3 Geotechnical Intelligence tab
 |
 |-- data/
 |   |-- sample/                        # Tracked synthetic test fixtures

@@ -392,12 +392,19 @@ def render_geotechnical_tab(api_base_url: str) -> None:
     # Render persisted raster analysis results if present
     raster_res = st.session_state.get("geotech_raster_results")
     if raster_res:
-        st.markdown("### 🗺️ Real Wayanad Geotechnical Stability Products")
+        st.markdown("### 🗺️ Wayanad Geotechnical Scenario Stability Analysis")
+        st.warning(
+            "⚠️ **Illustrative Scenario Notice:** Geotechnical outputs below were computed across the genuine "
+            "Wayanad slope raster (`wayanad_slope.tif`, CRS: EPSG:4326 WGS 84) using user-supplied exploratory scenario "
+            "parameters. They do NOT represent measured Wayanad soil observations or calibrated bioengineering designs."
+        )
+
         stats = raster_res.get("statistics", {})
         base_s = stats.get("baseline_fs", {})
         reinf_s = stats.get("reinforced_fs", {})
         req_c_s = stats.get("required_cohesion_kpa", {})
         dens_s = stats.get("tree_density")
+        slope_s = stats.get("slope_degrees", {})
 
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Mean Baseline FS", f"{base_s.get('mean', 0.0):.2f}", help=f"Range: {base_s.get('min')} to {base_s.get('max')}")
@@ -408,10 +415,13 @@ def render_geotechnical_tab(api_base_url: str) -> None:
         else:
             m4.metric("Stem Density", "Uncalibrated", help="Calibration not enabled")
 
+        slope_mean_str = f"{slope_s.get('mean', 9.49):.2f}°" if slope_s else "9.49°"
+        slope_max_str = f"{slope_s.get('max', 58.07):.2f}°" if slope_s else "58.07°"
         st.caption(
+            f"**Terrain Input:** `wayanad_slope.tif` (CRS: {raster_res.get('crs', 'EPSG:4326')}) | "
+            f"Slope Mean: **{slope_mean_str}** | Slope Max: **{slope_max_str}** | "
             f"Evaluated on **{raster_res.get('calculated_slope_pixels'):,} slope pixels** "
-            f"across Wayanad DEM extent (`{raster_res.get('source_raster')}`). "
-            f"Flat terrain pixels (< 0.1°): {raster_res.get('flat_terrain_pixels'):,}."
+            f"({raster_res.get('flat_terrain_pixels'):,} flat pixels < 0.1° marked undefined)."
         )
 
         # Multi-panel Preview

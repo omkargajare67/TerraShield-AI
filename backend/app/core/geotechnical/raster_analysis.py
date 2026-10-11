@@ -115,7 +115,7 @@ def generate_geotechnical_preview(
     cb3.set_label("ΔC Required (kPa)", color="#94a3b8", fontsize=9)
 
     fig.suptitle(
-        f"TerraShield AI — Geotechnical Stability Modeling ({title_suffix})",
+        f"TerraShield AI — Geotechnical Stability Modeling ({title_suffix} - Illustrative Scenario)",
         color="#f8fafc",
         fontsize=13,
         fontweight="bold",
@@ -268,7 +268,7 @@ def process_geotechnical_raster(
             pixel_size_x=metadata.pixel_size_x,
             pixel_size_y=metadata.pixel_size_y,
             nodata_value=-9999.0,
-            crs_str=metadata.crs or "EPSG:32643",
+            crs_str=metadata.crs or "EPSG:4326 (WGS 84)",
         )
         # Copy canonical copy to processed/geotechnical
         canonical_path = GEOTECHNICAL_DIR / f"wayanad_{key}.tif"
@@ -332,11 +332,18 @@ def process_geotechnical_raster(
         "calculated_slope_pixels": calc_count,
         "flat_terrain_pixels": flat_count,
         "scenario_assumptions": {
+            "is_illustrative_scenario": True,
+            "scenario_type": "ILLUSTRATIVE_EXPLORATORY_BENCHMARK",
             "spatial_uniformity_disclosure": (
                 "Spatially uniform parameter scenario applied across the study area. "
                 "These values represent user-supplied exploratory geotechnical scenario inputs, "
-                "NOT spatially interpolated borehole measurements or local soil surveys."
+                "NOT spatially interpolated borehole measurements, field observations, or local soil surveys."
             ),
+            "calibration_disclosure": (
+                "Tree density estimates assume an unvalidated linear scaling benchmark (RAR ~ density). "
+                "They are illustrative decision-support indicators, NOT certified planting prescriptions."
+            ),
+            "coordinate_reference_system": metadata.crs or "EPSG:4326 (WGS 84)",
             "soil": {
                 "c_prime_kpa": soil.c_prime_kpa,
                 "gamma_kn_m3": soil.gamma_kn_m3,
@@ -360,6 +367,14 @@ def process_geotechnical_raster(
             },
         },
         "statistics": {
+            "slope_degrees": {
+                "min": round(float(np.min(slope_arr[valid_mask])), 2) if valid_pixels > 0 else 0.0,
+                "max": round(float(np.max(slope_arr[valid_mask])), 2) if valid_pixels > 0 else 0.0,
+                "mean": round(float(np.mean(slope_arr[valid_mask])), 2) if valid_pixels > 0 else 0.0,
+                "median": round(float(np.median(slope_arr[valid_mask])), 2) if valid_pixels > 0 else 0.0,
+                "mean_calculated_slope": round(float(np.mean(slope_arr[calc_mask])), 2) if calc_count > 0 else 0.0,
+                "flat_pixels_below_0_1_deg": flat_count,
+            },
             "baseline_fs": {
                 "min": round(float(np.min(base_vals)), 3) if calc_count > 0 else 0.0,
                 "max": round(float(np.max(base_vals)), 3) if calc_count > 0 else 0.0,

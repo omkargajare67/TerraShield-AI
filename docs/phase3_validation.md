@@ -37,7 +37,8 @@ The automated test suite (`backend/tests/test_geotechnical.py`) verifies all 24 
 | `test_15`| Missing Soil Parameters Blocked | Request omitting mandatory soil inputs | HTTP 422 Unprocessable Entity | **PASSED** |
 | `test_16`| Missing Root Parameters Handled | Request without root inputs | Baseline evaluated; no root reinforcement claimed | **PASSED** |
 | `test_17`| Missing Density Calibration Handled | Root provided without field calibration | Required RAR computed; stem density unavailable | **PASSED** |
-| `test_18-19`| Spatial Raster Metadata Preservation | GeoTIFF bounds, CRS, pixel scale, NoData | Preserved across all output GeoTIFFs ($-9999.0$) | **PASSED** |
+| `test_18-19`| Spatial Raster Metadata Preservation | GeoTIFF bounds, CRS (EPSG:4326), NoData | Preserved across all output GeoTIFFs ($-9999.0$) | **PASSED** |
+| `test_24`| Exact CRS Alignment Across Pipeline | DEM, Slope, and Geotechnical rasters | Exact match on EPSG:4326, bounds, and pixel scale | **PASSED** |
 | `test_20`| Secure Artifact Retrieval | Directory traversal attempt `../../etc/passwd` | HTTP 404 / 400 Access Blocked | **PASSED** |
 | `test_21`| Parameter Validation API | Pydantic schema validation & provenance check | HTTP 200 with structured validation report | **PASSED** |
 | `test_22`| Phase 1 Demonstration Regression | `/health`, `/api/v1/parcels`, `/api/v1/analysis` | 5 demo parcels prioritized; all routes operational | **PASSED** |
@@ -50,13 +51,16 @@ The automated test suite (`backend/tests/test_geotechnical.py`) verifies all 24 
 The real Wayanad slope GeoTIFF (`data/processed/real/wayanad_slope.tif`) was successfully ingested and processed using the automated pipeline:
 
 ### 3.1 Input Characteristics:
-- **Raster Dimensions:** $360 \times 360$ pixels
+- **Coordinate Reference System:** `EPSG:4326 (WGS 84)` (Geographic Longitude / Latitude in degrees)
+- **Geographic Bounding Box:** `minx: 76.00° E, miny: 11.55° N, maxx: 76.10° E, maxy: 11.65° N`
+- **Raster Dimensions:** $360 \times 360$ pixels ($0.0002778^\circ \approx 30\text{ m}$ pixel scale)
 - **Total Pixels:** $129,600$
 - **Valid Slope Pixels:** $129,600$ ($100\%$ valid, 0 NoData)
-- **Slope Angle Range:** $0.0^\circ$ to $58.07^\circ$
-- **Mean Slope Angle:** $15.71^\circ$
+- **Slope Angle Range:** $0.00^\circ$ to $58.07^\circ$
+- **Mean Slope Angle:** **$9.49^\circ$** (across all $129,600$ valid cells; $9.55^\circ$ for $\beta \ge 0.1^\circ$)
+- **Median Slope Angle:** **$8.60^\circ$**
 - **Calculated Hillslope Pixels ($\beta \ge 0.1^\circ$):** $128,879$
-- **Flat Terrain Pixels ($\beta < 0.1^\circ$):** $721$
+- **Flat Terrain Pixels ($\beta < 0.1^\circ$):** $721$ (marked undefined, FS = -9999.0)
 
 ### 3.2 Exploratory Scenario Parameters Applied:
 - **Soil:** $c' = 5.0\text{ kPa}$, $\gamma = 18.0\text{ kN/m}^3$, $z = 1.5\text{ m}$, $\phi' = 28.0^\circ$, $u = 0.0\text{ kPa}$
@@ -108,6 +112,8 @@ The real Wayanad slope GeoTIFF (`data/processed/real/wayanad_slope.tif`) was suc
    Root tensile strength and Root Area Ratio are **NOT** derived from Sentinel-2 NDVI. Spectral greenness does not provide subsurface root tensile or shear strength properties.
 4. **Factor of Safety vs. Landslide Probability:**
    Factor of Safety is a deterministic mechanical index. It must **NOT** be interpreted as an empirical landslide probability percentage.
+5. **CRS & Georeferencing Audit:**
+   All ingested environmental datasets (NASA SRTM DEM, Sentinel-2 B04/B08) and derived products (Slope, Aspect, NDVI, and Geotechnical FS/Cohesion layers) are georeferenced in native geographic `EPSG:4326 (WGS 84)`. Metric cell distances $\Delta x, \Delta y$ are calculated dynamically using WGS 84 ellipsoidal arc lengths at each pixel's latitude ($11.60^\circ\text{N}$). No reprojection to projected UTM Zone 43N (`EPSG:32643`) was performed. Both input and derivative rasters strictly share the identical CRS, transform, pixel scale ($0.0002778^\circ$), and spatial bounds (`76.00° E – 76.10° E, 11.55° N – 11.65° N`).
 
 ---
 
@@ -117,12 +123,12 @@ The real Wayanad slope GeoTIFF (`data/processed/real/wayanad_slope.tif`) was suc
 ============================= test session starts =============================
 platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
 rootdir: C:\TERRASHIELD AI
-collected 84 items
+collected 85 items
 
 backend/tests/test_analysis_service.py .................................. [ 40%]
-backend/tests/test_api.py ..............                                  [ 57%]
+backend/tests/test_api.py ..............                                  [ 56%]
 backend/tests/test_geospatial.py ........................................ [ 73%]
-backend/tests/test_geotechnical.py ......................                 [100%]
+backend/tests/test_geotechnical.py .......................                [100%]
 
-======================== 84 passed, 1 warning in 2.94s ========================
+======================== 85 passed, 1 warning in 3.03s ========================
 ```

@@ -130,6 +130,13 @@ $$stems\_per\_ha_{required} = stems_{ref} \cdot \left(\frac{RAR_{required}}{RAR_
 | Reinforcement Factor | $K$ | Dimensionless | Dimensionless | $K > 0.0$ (Default 1.2) |
 | Target Factor of Safety | $FS_{target}$| Dimensionless | Dimensionless | $> 0.0$ (Benchmark 1.3) |
 
+### 3.1 Spatial Coordinate Reference System & Resolution
+- **Spatial CRS:** `EPSG:4326 (WGS 84)` (Geographic Longitude / Latitude).
+- **Spatial Bounds:** Longitude `76.00° E – 76.10° E`, Latitude `11.55° N – 11.65° N` (Wayanad, Kerala).
+- **Pixel Scale:** $0.0002778^\circ \approx 30.29\text{ m}$ (East-West $\Delta x$) and $30.79\text{ m}$ (North-South $\Delta y$) at latitude $11.60^\circ\text{N}$.
+- **Ellipsoidal Metric Gradients:** The pure-Python gradient solver evaluates spatial increments dynamically on the WGS 84 reference ellipsoid ($R_a = 6,378,137\text{ m}$, $f = 1/298.257223563$) without raster distortion or synthetic reprojection.
+- **Projected System Distinction:** `EPSG:32643` (UTM Zone 43N) is designated as the recommended projected CRS for parcel boundary vectors in the pilot corridor, but all continuous raster products remain in native geographic EPSG:4326.
+
 ---
 
 ## 4. Numerical Edge Cases & Model Handling
