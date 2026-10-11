@@ -4,7 +4,7 @@
   "description": "Verified Western Ghats watershed study area using NASA SRTM NASADEM (30m) and Sentinel-2 L2A NDVI (10m) for landslide-risk vegetative stabilization.",
   "is_builtin": true,
   "created_at": "2026-10-11T11:36:08.731533+00:00",
-  "updated_at": "2026-10-11T11:54:58.810767+00:00",
+  "updated_at": "2026-10-11T12:01:55.171816+00:00",
   "study_area_type": "preset",
   "bounds": {
     "minx": 76.0,
@@ -102,7 +102,7 @@
     },
     "missing_data_policy": "RENORMALIZE_AVAILABLE"
   },
-  "latest_run_id": "a8d095f7",
+  "latest_run_id": "8a23b8c2",
   "saved_runs": [
     {
       "run_id": "a8d095f7",
@@ -118,6 +118,22 @@
         "parcel_rankings_csv": "run_a8d095f7_parcel_rankings.csv",
         "summary_json": "run_a8d095f7_summary.json",
         "audit_report_html": "run_a8d095f7_report.html"
+      }
+    },
+    {
+      "run_id": "8a23b8c2",
+      "timestamp": "2026-10-11T12:01:54.304831+00:00",
+      "cell_size_m": 300.0,
+      "total_parcels": 1369,
+      "eligible_count": 1369,
+      "excluded_count": 0,
+      "total_plantable_area_ha": 12064.19,
+      "artifacts": {
+        "parcels_geojson": "run_8a23b8c2_parcels.geojson",
+        "parcel_metrics_csv": "run_8a23b8c2_parcel_metrics.csv",
+        "parcel_rankings_csv": "run_8a23b8c2_parcel_rankings.csv",
+        "summary_json": "run_8a23b8c2_summary.json",
+        "audit_report_html": "run_8a23b8c2_report.html"
       }
     }
   ]

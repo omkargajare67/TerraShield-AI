@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 800" width="100%" height="100%" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="waveBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10251D"/>
+      <stop offset="100%" stop-color="#1C4937"/>
+    </linearGradient>
+    <linearGradient id="waveFill1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#34795C" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#10251D" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="waveFill2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#A7E6C5" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#16392b" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1440" height="800" fill="url(#waveBg)"/>
+
+  <!-- Topographic Wave Layers -->
+  <path d="M0,280 C360,200 720,340 1080,240 C1260,190 1380,260 1440,230 L1440,800 L0,800 Z" fill="url(#waveFill1)"/>
+  <path d="M0,380 C320,320 640,460 960,360 C1200,280 1360,420 1440,390 L1440,800 L0,800 Z" fill="url(#waveFill2)"/>
+  <path d="M0,490 C280,410 600,560 920,470 C1180,400 1340,510 1440,480 L1440,800 L0,800 Z" fill="#143327" opacity="0.85"/>
+  <path d="M0,600 C340,540 680,680 1020,590 C1240,530 1380,620 1440,590 L1440,800 L0,800 Z" fill="#0c1d16" opacity="0.95"/>
+
+  <!-- Topographic Contour Isolines -->
+  <path d="M0,240 C360,160 720,300 1080,200 C1260,150 1380,220 1440,190" fill="none" stroke="#A7E6C5" stroke-width="1" stroke-opacity="0.2"/>
+  <path d="M0,320 C340,250 680,390 1020,300 C1240,240 1380,330 1440,300" fill="none" stroke="#A7E6C5" stroke-width="0.75" stroke-opacity="0.15" stroke-dasharray="6,6"/>
+  <path d="M0,420 C320,360 640,500 960,400 C1200,320 1360,460 1440,430" fill="none" stroke="#A7E6C5" stroke-width="1" stroke-opacity="0.15"/>
+  <path d="M0,530 C300,460 620,600 940,510 C1200,440 1360,550 1440,520" fill="none" stroke="#A7E6C5" stroke-width="0.75" stroke-opacity="0.1"/>
+</svg>

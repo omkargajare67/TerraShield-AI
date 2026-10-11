@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="blobGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34795C" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#1C4937" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="blobGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#A7E6C5" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#34795C" stop-opacity="0.03"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fluid Organic Blobs -->
+  <path d="M720,160 C810,230 840,360 800,470 C760,580 650,670 530,680 C410,690 280,620 190,530 C100,440 50,330 80,230 C110,130 220,40 340,15 C460,-10 630,90 720,160 Z" fill="url(#blobGrad1)"/>
+  <path d="M680,220 C750,280 770,390 730,480 C690,570 590,640 490,650 C390,660 290,610 220,530 C150,450 110,340 140,250 C170,160 270,90 370,70 C470,50 610,160 680,220 Z" fill="url(#blobGrad2)"/>
+</svg>
