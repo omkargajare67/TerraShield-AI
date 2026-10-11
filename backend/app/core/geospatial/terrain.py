@@ -24,15 +24,16 @@ def compute_elevation_stats(
     dem_array: np.ndarray, nodata_val: Optional[float] = None
 ) -> Tuple[ElevationStats, np.ndarray]:
     """Compute summary statistics for elevation and return a boolean valid-pixel mask."""
+    float_dem = dem_array.astype(np.float64)
     if nodata_val is not None:
         if np.isnan(nodata_val):
-            valid_mask = ~np.isnan(dem_array)
+            valid_mask = ~np.isnan(float_dem)
         else:
-            valid_mask = ~np.isclose(dem_array, nodata_val) & ~np.isnan(dem_array)
+            valid_mask = ~np.isclose(float_dem, float(nodata_val)) & ~np.isnan(float_dem)
     else:
-        valid_mask = ~np.isnan(dem_array)
+        valid_mask = ~np.isnan(float_dem)
 
-    valid_pixels = dem_array[valid_mask]
+    valid_pixels = float_dem[valid_mask]
 
     if valid_pixels.size == 0:
         return (
@@ -101,9 +102,12 @@ def calculate_slope_and_aspect(
     if dy_meters <= 0:
         dy_meters = 1.0
 
+    if rows < 2 or cols < 2:
+        raise ValueError(f"Raster dimensions ({cols}x{rows}) are too small for 2D gradient slope analysis; minimum size is 2x2.")
+
     # Clean array for gradient calculation by filling nodata with local mean
-    cleaned_dem = np.copy(dem_array)
-    mean_val = float(np.mean(dem_array[valid_mask])) if np.any(valid_mask) else 0.0
+    cleaned_dem = dem_array.astype(np.float64)
+    mean_val = float(np.mean(cleaned_dem[valid_mask])) if np.any(valid_mask) else 0.0
     cleaned_dem[~valid_mask] = mean_val
 
     # 2D Central Differences

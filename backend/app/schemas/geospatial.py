@@ -137,3 +137,6 @@ class GeospatialEngineStatus(BaseModel):
     supported_vector_formats: List[str]
     native_gdal_available: bool
     available_sample_datasets: List[str]
+    intended_pilot_region: str = "Western Ghats Corridor (Intended Pilot Study Area)"
+    pilot_bounds: Optional[Dict[str, float]] = None
+    demo_study_area: str = "Cascade Foothills Demonstration Basin (Synthetic Test Fixture)"

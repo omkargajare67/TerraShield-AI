@@ -11,6 +11,7 @@ from backend.app.schemas.geospatial import RasterMetadata
 # GeoTIFF Standard Tag IDs
 TIFFTAG_MODEL_PIXEL_SCALE = 33550
 TIFFTAG_MODEL_TIEPOINT = 33922
+TIFFTAG_MODEL_TRANSFORMATION = 34264
 TIFFTAG_GEO_KEY_DIRECTORY = 34735
 TIFFTAG_GEO_DOUBLE_PARAMS = 34736
 TIFFTAG_GEO_ASCII_PARAMS = 34737
@@ -60,6 +61,7 @@ def inspect_geotiff(file_path: Path) -> Tuple[np.ndarray, RasterMetadata]:
     # Extract Affine Georeferencing
     pixel_scale = tags.get(TIFFTAG_MODEL_PIXEL_SCALE)
     tiepoint = tags.get(TIFFTAG_MODEL_TIEPOINT)
+    model_trans = tags.get(TIFFTAG_MODEL_TRANSFORMATION)
 
     if pixel_scale and tiepoint and len(pixel_scale) >= 2 and len(tiepoint) >= 6:
         scale_x = float(pixel_scale[0])
@@ -72,13 +74,39 @@ def inspect_geotiff(file_path: Path) -> Tuple[np.ndarray, RasterMetadata]:
         maxx = x_origin + width * scale_x
         maxy = y_origin
         miny = y_origin - height * scale_y
+    elif model_trans and len(model_trans) >= 16:
+        # 4x4 Affine transformation matrix (standard in many GDAL/GIS tools)
+        m = [float(val) for val in model_trans]
+        scale_x = abs(m[0])
+        scale_y = abs(m[5])
+        rot_xy = m[1]
+        rot_yx = m[4]
+        x_origin = m[3]
+        y_origin = m[7]
+
+        minx = x_origin
+        maxx = x_origin + width * scale_x
+        maxy = y_origin
+        miny = y_origin - height * scale_y
+
+        if abs(rot_xy) > 1e-6 or abs(rot_yx) > 1e-6:
+            validation_messages.append(
+                "Raster contains a rotated affine matrix. "
+                "Regular-grid terrain gradient analysis assumes north-up alignment."
+            )
+            status = "ROTATED_TRANSFORM"
     else:
         # Fallback bounding box if unreferenced
         scale_x = 1.0
         scale_y = 1.0
         minx, miny, maxx, maxy = 0.0, 0.0, float(width), float(height)
-        validation_messages.append("Raster lacks georeferencing tiepoint or pixel scale tags.")
+        validation_messages.append("Raster lacks georeferencing tiepoint, pixel scale, or transformation tags.")
         status = "UNREFERENCED"
+
+    # Check for invalid non-positive pixel scale
+    if scale_x <= 0 or scale_y <= 0:
+        validation_messages.append("Non-positive pixel resolution detected in georeferencing tags.")
+        status = "INVALID_RESOLUTION"
 
     # Extract CRS metadata
     crs_str = None
@@ -91,8 +119,7 @@ def inspect_geotiff(file_path: Path) -> Tuple[np.ndarray, RasterMetadata]:
         crs_str = str(ascii_params).strip().replace("|", " ").strip()
 
     if not crs_str and geo_keys:
-        # Check for standard EPSG codes in GeoKeys
-        # GeoKey directory format: [Header (4 ints), KeyID, TIFFTagLocation, Count, Value_Offset, ...]
+        # Parse GeoKey directory: header is 4 shorts, followed by key entries (4 shorts each)
         key_list = list(geo_keys)
         if len(key_list) >= 8:
             for i in range(4, len(key_list) - 3, 4):
@@ -103,13 +130,14 @@ def inspect_geotiff(file_path: Path) -> Tuple[np.ndarray, RasterMetadata]:
                     break
 
     if not crs_str:
-        # If in range of typical lat/lon bounds
+        # Check coordinate bounds
         if -180.0 <= minx <= 180.0 and -90.0 <= miny <= 90.0:
             crs_str = "EPSG:4326 (Inferred WGS84 Geographic)"
             validation_messages.append("CRS unstated in GeoKeys; inferred EPSG:4326 from coordinate bounds.")
         else:
             validation_messages.append("Coordinate Reference System is unspecified.")
-            status = "MISSING_CRS"
+            if status == "VALID":
+                status = "MISSING_CRS"
 
     # Extract Nodata
     nodata_val = None
@@ -122,12 +150,17 @@ def inspect_geotiff(file_path: Path) -> Tuple[np.ndarray, RasterMetadata]:
         except (ValueError, TypeError):
             nodata_val = None
 
-    # Count valid vs nodata pixels
+    # Count valid vs nodata pixels across integer and floating datatypes
     if nodata_val is not None:
-        nodata_mask = np.isnan(data) if np.isnan(nodata_val) else np.isclose(data, nodata_val)
+        if np.isnan(nodata_val):
+            nodata_mask = np.isnan(data) if np.issubdtype(data.dtype, np.floating) else np.zeros_like(data, dtype=bool)
+        else:
+            nodata_mask = np.isclose(data.astype(np.float64), nodata_val)
+            if np.issubdtype(data.dtype, np.floating):
+                nodata_mask |= np.isnan(data)
         nodata_count = int(np.sum(nodata_mask))
     else:
-        nodata_mask = np.isnan(data)
+        nodata_mask = np.isnan(data) if np.issubdtype(data.dtype, np.floating) else np.zeros_like(data, dtype=bool)
         nodata_count = int(np.sum(nodata_mask))
 
     valid_count = int(data.size - nodata_count)

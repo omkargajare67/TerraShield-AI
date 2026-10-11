@@ -6,71 +6,80 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.38+-FF4B4B.svg)](https://streamlit.io/)
 [![Phase](https://img.shields.io/badge/Phase-2%20of%205%20(Geospatial%20Data%20Engine)-blue.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-49%20Passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-62%20Passing-brightgreen.svg)]()
 
 ---
 
-> **⚠️ Geospatial & Environmental Notice**  
-> Terrain slope and aspect derived in Phase 2 are physical geospatial features, not validated geotechnical predictions or landslide probability maps.  
-> Slope steepness is one environmental parameter among many; Factor of Safety ($FS$) and root-reinforcement equations will be evaluated in Phase 3.
+> **⚠️ Geospatial & Environmental Disclaimer**  
+> Terrain slope and aspect derived in Phase 2 are physical terrain parameters, not validated geotechnical predictions or landslide hazard prescriptions.  
+> Slope steepness is one environmental parameter among many; physical Factor of Safety ($FS$) and root-reinforcement equations will be evaluated in Phase 3.
 
 ---
 
-## 1. Project Overview
+## 1. Project Overview & Intended Pilot Study Corridor
 
-TerraShield AI is an AI-assisted geospatial decision-support platform designed to identify high-impact reforestation locations and evaluate potential environmental benefits. The project focuses on three primary intervention areas:
+TerraShield AI is an AI-assisted geospatial decision-support platform designed to identify high-impact reforestation locations and evaluate potential environmental benefits:
 
 1. **Landslide-Risk Mitigation:** Stabilizing steep slopes and reducing shallow slip risk through root-cohesion reinforcement.
 2. **Air-Quality Buffers:** Filtering particulate matter via strategic vegetative buffer placement near emissions sources.
 3. **Urban-Heat Mitigation:** Countering urban heat island effects through targeted microclimate cooling.
 
-### The Prioritization Concept: Leverage Score ($L$)
+### Intended Project Pilot Study Region: Western Ghats Corridor
+TerraShield AI is designed for real-world deployment in the **Western Ghats Mountain Corridor (India)**, a UNESCO World Heritage biodiversity hotspot experiencing severe monsoon-triggered shallow landslides and agricultural soil loss.
+- **Pilot Region:** Western Ghats Corridor (Kerala, Tamil Nadu, Karnataka).
+- **Target Geographic Bounds:** `9.20° N – 12.00° N`, `75.80° E – 77.50° E`.
+- **Recommended Projected CRS:** `EPSG:32643 (WGS 84 / UTM Zone 43N)`.
 
+### The Prioritization Concept: Leverage Score ($L$)
 Candidate parcels are ranked using the project's central efficiency metric:
 
 $$\text{Leverage Score} = \frac{\text{Risk Reduction Achieved}}{\text{Trees Required}}$$
 
 $$L = \frac{\Delta R}{N}$$
 
-Where:
-- $\Delta R$: Modeled change in the environmental risk metric.
-- $N$: Total number of trees required for the modeled planting footprint.
+Where $\Delta R$ is the modeled risk reduction and $N$ is the required planting tree count.
 
 ---
 
-## 2. Phase 2 Capabilities: Geospatial Data Engine
+## 2. Three-Tier Data Provenance Model
 
-Phase 2 extends the Phase 1 foundation into a genuine geospatial processing pipeline:
+To avoid confusion between test mocks and ground-truth observations, TerraShield AI strictly enforces three data categories:
 
-- **DEM Ingestion & Metadata Inspection:** Decodes GeoTIFF elevation rasters, extracting raster dimensions, band counts, data type, pixel resolutions, bounding coordinates, nodata masks, and coordinate reference systems (CRS).
-- **Terrain Gradient & Slope Processing:** Computes 2D spatial gradients ($dz/dx$ and $dz/dy$) using finite-difference formulation, yielding terrain slope in degrees. Automatically applies ellipsoidal geodesic scaling when inputs use geographic (WGS84 degrees) coordinates.
-- **Terrain Aspect Analysis:** Computes aspect as an azimuth in degrees from North ($0^\circ-360^\circ$), flagging flat areas ($<0.1^\circ$ slope) as $-1.0^\circ$ (flat).
-- **Sentinel-2 NDVI Calculation:** Ingests Red (Band 4) and NIR (Band 8) GeoTIFF bands, verifies grid compatibility, and calculates $\text{NDVI} = \frac{\text{NIR} - \text{Red}}{\text{NIR} + \text{Red}}$ with robust zero-denominator handling.
-- **SoilGrids Data Ingestion & Validation:** Validates physical soil properties (clay, bulk density, pH, depth), depth intervals, and tabular column integrity against ISRIC SoilGrids standards.
-- **Protected-Area Spatial Exclusion:** Performs vector intersection tests between candidate planting parcels and protected-area boundaries, computing overlap area and preserving statutory conservation justifications.
-- **Visual Previews & Secure Exports:** Automatically renders multi-panel PNG previews and allows downloading derived GeoTIFF layers (Slope, Aspect, NDVI) through secure, traversal-proof artifact endpoints.
+1. **Tier 1 — Synthetic Test Fixtures (`data/sample/`):** Deterministic mock datasets (Cascade Foothills parcels, 10x10 test rasters) used exclusively for offline test verification.
+2. **Tier 2 — Real Environmental Observations (`data/raw/` or `data/uploads/`):** Genuine external inputs (NASA SRTM DEM, Sentinel-2 L2A tiles, ISRIC SoilGrids, WDPA reserves) uploaded or placed by users.
+3. **Tier 3 — Derived Geospatial Products (`data/processed/` & `data/artifacts/`):** Continuous GeoTIFFs (Slope, Aspect, NDVI) and GeoJSON outputs generated by the verified engine.
 
 ---
 
-## 3. Architecture & Folder Structure
+## 3. Phase 2 Capabilities: Geospatial Data Engine
+
+- **GeoTIFF Ingestion & Metadata Inspection:** Decodes GeoTIFF elevation rasters, validating dimensions, band counts, data type, pixel resolutions, bounding coordinates, nodata masks, and coordinate reference systems (CRS).
+- **Multi-Metadata Tag Compatibility:** Supports standard `ModelPixelScaleTag` (33550) + `ModelTiepointTag` (33922), as well as 4x4 `ModelTransformationTag` (34264) matrices written by independent GIS tools (GDAL, QGIS, ArcGIS).
+- **Rotated Grid Detection:** Explicitly flags non-north-up rotated affine transforms (`ROTATED_TRANSFORM`) with actionable explanations.
+- **Topographic Terrain Processing:** Computes 2D spatial gradients ($dz/dx$ and $dz/dy$) using finite differences, deriving slope in degrees. Automatically applies geodesic ellipsoidal scaling when inputs use geographic (WGS84 degrees) coordinates.
+- **Terrain Aspect Topography:** Computes aspect as an azimuth in degrees from North ($0^\circ-360^\circ$ clockwise: 0°=N, 90°=E, 180°=S, 270°=W), flagging flat areas ($<0.1^\circ$ slope) as $-1.0^\circ$ (flat).
+- **Sentinel-2 NDVI Calculation:** Ingests Red (Band 4) and NIR (Band 8) bands, verifies identical spatial grids and CRS compatibility, and calculates $\text{NDVI} = \frac{\text{NIR} - \text{Red}}{\text{NIR} + \text{Red}}$ with zero-denominator protection.
+- **SoilGrids Validation:** Validates physical soil properties (clay, bulk density, pH, depth), depth intervals, and tabular coordinate column integrity against ISRIC SoilGrids standards.
+- **Protected-Area Spatial Exclusion:** Intersects candidate parcels with statutory conservation reserves, calculating overlap area in hectares and preserving legal justifications.
+- **Visual Previews & Secure Exports:** Renders multi-panel preview PNGs and exports continuous GeoTIFF layers (Slope, Aspect, NDVI) through traversal-proof artifact endpoints.
+
+---
+
+## 4. Architecture & Folder Structure
 
 ```
 TERRASHIELD-AI/
 |-- backend/
 |   |-- app/
-|   |   |-- __init__.py
 |   |   |-- main.py                    # FastAPI entrypoint & router mounts
 |   |   |-- api/
-|   |   |   |-- __init__.py
 |   |   |   |-- routes.py              # Phase 1 routes (/parcels, /analysis)
 |   |   |   |-- geospatial_routes.py   # Phase 2 geospatial endpoints
 |   |   |-- core/
-|   |   |   |-- __init__.py
-|   |   |   |-- config.py              # Environment settings & upload limits
+|   |   |   |-- config.py              # Settings, pilot bounds & upload limits
 |   |   |   |-- analysis_service.py    # Phase 1 leverage & exclusion solver
-|   |   |   |-- demo_data.py           # GeoJSON data loading
+|   |   |   |-- demo_data.py           # GeoJSON sample loader
 |   |   |   |-- geospatial/            # Phase 2 Geospatial Engine
-|   |   |       |-- __init__.py
 |   |   |       |-- coordinate_systems.py  # CRS & geodesic scaling
 |   |   |       |-- raster_loader.py       # GeoTIFF inspection & writer
 |   |   |       |-- terrain.py             # Elevation, slope & aspect solver
@@ -79,28 +88,24 @@ TERRASHIELD-AI/
 |   |   |       |-- soil_data.py           # SoilGrids metadata validator
 |   |   |       |-- artifacts.py           # Traversal-safe artifact manager
 |   |   |-- schemas/
-|   |       |-- __init__.py
 |   |       |-- health.py              # Health check schema
 |   |       |-- parcel.py              # Parcel GeoJSON schemas
 |   |       |-- analysis.py            # Analysis request/response schemas
 |   |       |-- geospatial.py          # Terrain, NDVI, Soil & Vector schemas
 |   |-- tests/
-|       |-- __init__.py
 |       |-- test_api.py                # Phase 1 API integration tests
 |       |-- test_analysis_service.py   # Phase 1 leverage unit tests
-|       |-- test_geospatial.py         # Phase 2 terrain, NDVI, vector tests
+|       |-- test_geospatial.py         # Phase 2 terrain, NDVI, vector & hardening tests
 |
 |-- frontend/
-|   |-- __init__.py
 |   |-- app.py                         # Streamlit user interface
 |   |-- components/
-|       |-- __init__.py
 |       |-- map_view.py                # Folium map & parcel polygon styling
 |       |-- metrics_view.py            # KPI cards & pandas summary table
 |       |-- terrain_view.py            # DEM, NDVI & Environmental UI tabs
 |
 |-- data/
-|   |-- sample/
+|   |-- sample/                        # Tracked synthetic test fixtures
 |   |   |-- demo_parcels.geojson       # Synthetic candidate parcels
 |   |   |-- synthetic_demo_dem.tif     # Synthetic test DEM fixture
 |   |   |-- synthetic_s2_b04_red.tif   # Synthetic Sentinel-2 Red band
@@ -111,13 +116,9 @@ TERRASHIELD-AI/
 |   |-- uploads/                       # User uploads (.gitignore)
 |   |-- artifacts/                     # Generated PNGs and GeoTIFFs (.gitignore)
 |
-|-- tests/
-|   |-- __init__.py
-|   |-- test_geojson.py                # GeoJSON structure & CRS validation
-|   |-- test_frontend_components.py    # UI & map component unit tests
-|
 |-- docs/
 |   |-- architecture.md                # System architecture & 5-phase roadmap
+|   |-- real_data_acceptance_workflow.md # Real-data sourcing & verification guide
 |
 |-- requirements.txt                   # Pinned dependencies
 |-- .gitignore                         # Version control ignore rules
@@ -127,7 +128,7 @@ TERRASHIELD-AI/
 
 ---
 
-## 4. Dependencies & Installation
+## 5. Dependencies & Installation
 
 ### Core Packages
 - **Backend:** FastAPI, Uvicorn, Pydantic, HTTPX, Requests, Python-Multipart.
@@ -144,7 +145,7 @@ pip install -r requirements.txt
 
 ---
 
-## 5. Running the Application
+## 6. Running the Application
 
 ### Terminal 1: Start the FastAPI Backend
 ```powershell
@@ -162,14 +163,14 @@ pip install -r requirements.txt
 
 ---
 
-## 6. API Endpoints (Phase 2)
+## 7. API Endpoints (Phase 2)
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/health` | Service health status and runtime mode |
 | `GET` | `/api/v1/parcels` | Demonstration candidate parcels GeoJSON |
 | `POST` | `/api/v1/analysis` | Phase 1 prioritization analysis |
-| `GET` | `/api/v1/geospatial/status` | Engine capability and supported formats |
+| `GET` | `/api/v1/geospatial/status` | Engine capability, supported formats, and pilot corridor info |
 | `POST` | `/api/v1/geospatial/dem/inspect` | Upload & inspect DEM GeoTIFF metadata |
 | `POST` | `/api/v1/geospatial/dem/terrain` | Compute elevation, slope (deg), aspect (azimuth) |
 | `POST` | `/api/v1/geospatial/ndvi` | Compute Sentinel-2 NDVI from Red & NIR bands |
@@ -180,22 +181,14 @@ pip install -r requirements.txt
 
 ---
 
-## 7. How to Supply Real Elevation & Environmental Data
+## 8. Real-Data Ingestion & Verification
 
-### Acquiring Real DEM Rasters
-1. **NASA SRTM 30m Global DEM:** Download tiles via [USGS EarthExplorer](https://earthexplorer.usgs.gov/) or [OpenTopography](https://portal.opentopography.org/).
-2. **USGS 3DEP High-Resolution DEM:** Download 1m / 10m GeoTIFFs for US locations via the USGS National Map.
-3. **Format Requirement:** Uncompressed or LZW-compressed GeoTIFF (`.tif`, `.tiff`) with explicit CRS metadata (e.g. UTM or EPSG:4326).
-4. **Testing in UI:** Open the **🏔️ DEM & Terrain** tab in the dashboard, upload the GeoTIFF file, and click **Run Terrain Analysis**.
-
-### Acquiring Sentinel-2 Imagery
-1. Download Level-2A surface reflectance products via [Copernicus Data Space](https://dataspace.copernicus.eu/).
-2. Select Band 4 (`B04_10m.jp2` / `.tif`, 665 nm) and Band 8 (`B08_10m.jp2` / `.tif`, 842 nm).
-3. Upload both bands into the **🌿 Sentinel-2 NDVI** tab.
+For exact procedures to source, convert, and verify real environmental datasets, refer to the dedicated guide:
+👉 **[Real-Data Acceptance & Verification Workflow](docs/real_data_acceptance_workflow.md)**
 
 ---
 
-## 8. Running the Automated Test Suite
+## 9. Running the Automated Test Suite
 
 Execute the full suite with pytest:
 
@@ -204,6 +197,6 @@ Execute the full suite with pytest:
 ```
 
 **Verification Results:**
-- **49 total tests** executed and passing.
+- **62 total tests** executed and passing.
 - 26 tests cover Phase 1 foundation, APIs, calculations, and GeoJSON structure.
-- 23 tests cover Phase 2 DEM inspection, 45° slope validation, 180° aspect verification, NDVI zero-denominator protection, SoilGrids validation, vector spatial intersection, and artifact security.
+- 36 tests cover Phase 2 DEM inspection, 4x4 matrix transforms, signed `int16` SRTM elevation, unsigned `uint16` Sentinel-2 DNs, rotated transform detection, cardinal/diagonal directional slopes (North, South, East, West, NW, SW), nodata boundary isolation, NDVI zero-denominator protection, grid alignment checks, SoilGrids validation, vector spatial intersection, and artifact security.

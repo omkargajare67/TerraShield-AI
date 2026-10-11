@@ -353,3 +353,214 @@ class TestPhase1Integrity:
         resp = client.post("/api/v1/analysis", json={"scenario": "landslide_mitigation"})
         assert resp.status_code == 200
         assert resp.json()["highest_leverage_score"] == 0.0008
+
+
+class TestGeoTIFFInteroperabilityAndHardening:
+    """Interoperability tests with independent GeoTIFF metadata structures and datatypes."""
+
+    def test_geotiff_model_transformation_tag_support(self, tmp_path: Path):
+        """Test GeoTIFF using standard 4x4 ModelTransformationTag (Tag 34264)."""
+        import tifffile
+        arr = np.full((8, 8), 250.0, dtype=np.float32)
+        # 4x4 matrix: row 0: [30.0, 0, 0, 591000.0], row 1: [0, -30.0, 0, 5256000.0], row 2: [0, 0, 1, 0], row 3: [0, 0, 0, 1]
+        trans_matrix = (
+            30.0, 0.0, 0.0, 591000.0,
+            0.0, -30.0, 0.0, 5256000.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        )
+        extratags = [
+            (34264, "d", 16, trans_matrix, False),
+            (34737, "s", 10, b"EPSG:32610|", False),
+        ]
+        file_path = tmp_path / "matrix_trans.tif"
+        tifffile.imwrite(str(file_path), arr, extratags=extratags)
+
+        data, meta = inspect_geotiff(file_path)
+        assert meta.pixel_size_x == 30.0
+        assert meta.pixel_size_y == 30.0
+        assert meta.bounds["minx"] == 591000.0
+        assert meta.bounds["maxy"] == 5256000.0
+        assert meta.validation_status == "VALID"
+
+    def test_signed_integer_dem_srtm_datatype(self, tmp_path: Path):
+        """Test NASA SRTM signed 16-bit integer (int16) elevation raster."""
+        arr = np.array([[500, 510], [520, 530]], dtype=np.int16)
+        path = tmp_path / "srtm_int16.tif"
+        write_geotiff(
+            path, arr.astype(np.float32),
+            bounds={"minx": 0.0, "miny": 0.0, "maxx": 60.0, "maxy": 60.0},
+            pixel_size_x=30.0, pixel_size_y=30.0, nodata_value=-32768.0,
+        )
+        data, meta = inspect_geotiff(path)
+        stats, mask = compute_elevation_stats(data, meta.nodata_value)
+        assert stats.min_elevation == 500.0
+        assert stats.max_elevation == 530.0
+        assert stats.mean_elevation == 515.0
+
+    def test_unsigned_integer_s2_dn_datatype(self, tmp_path: Path):
+        """Test Sentinel-2 unsigned 16-bit integer (uint16) reflectance DNs."""
+        arr = np.array([[1200, 1400], [1600, 1800]], dtype=np.uint16)
+        path = tmp_path / "s2_uint16.tif"
+        write_geotiff(
+            path, arr.astype(np.float32),
+            bounds={"minx": 0.0, "miny": 0.0, "maxx": 20.0, "maxy": 20.0},
+            pixel_size_x=10.0, pixel_size_y=10.0,
+        )
+        data, meta = inspect_geotiff(path)
+        assert meta.valid_pixel_count == 4
+
+    def test_detect_rotated_geotransform(self, tmp_path: Path):
+        """Test detection of rotated affine matrix (non-zero off-diagonals)."""
+        import tifffile
+        arr = np.zeros((4, 4), dtype=np.float32)
+        # Rotated matrix: rot_xy = 5.0, rot_yx = -5.0
+        trans_matrix = (
+            30.0, 5.0, 0.0, 500000.0,
+            -5.0, -30.0, 0.0, 5000000.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        )
+        file_path = tmp_path / "rotated.tif"
+        tifffile.imwrite(str(file_path), arr, extratags=[(34264, "d", 16, trans_matrix, False)])
+
+        _, meta = inspect_geotiff(file_path)
+        assert meta.validation_status == "ROTATED_TRANSFORM"
+        assert any("rotated" in msg.lower() for msg in meta.validation_messages)
+
+    def test_unreferenced_geotiff(self, tmp_path: Path):
+        """Test file without georeferencing tags."""
+        import tifffile
+        arr = np.ones((5, 5), dtype=np.float32)
+        file_path = tmp_path / "unref.tif"
+        tifffile.imwrite(str(file_path), arr)  # No extratags
+
+        _, meta = inspect_geotiff(file_path)
+        assert meta.validation_status == "UNREFERENCED"
+
+
+class TestDirectionalAspectAndBoundaryCalculations:
+    """Rigorous directional gradient verification across cardinal and diagonal slopes."""
+
+    def test_northward_aspect_gradient(self, tmp_path: Path):
+        """Terrain rising South, descending North -> Steepest descent is North (Aspect = 0° or 360°)."""
+        arr = np.zeros((8, 8), dtype=np.float32)
+        for r in range(8):
+            arr[r, :] = r * 10.0  # Row 0 (North) is 0m, Row 7 (South) is 70m
+        path = tmp_path / "north_descent.tif"
+        write_geotiff(path, arr, {"minx": 0, "miny": 0, "maxx": 80, "maxy": 80}, 10.0, 10.0)
+        data, meta = inspect_geotiff(path)
+        _, mask = compute_elevation_stats(data)
+        slope, aspect, _, aspect_stats = calculate_slope_and_aspect(data, meta, mask)
+
+        # Interior cells should point North: aspect is 0° (or within 1° of 0/360)
+        interior = aspect[2:6, 2:6]
+        assert np.all(np.isclose(interior, 0.0, atol=1.0) | np.isclose(interior, 360.0, atol=1.0))
+
+    def test_eastward_aspect_gradient(self, tmp_path: Path):
+        """Terrain rising West, descending East -> Steepest descent is East (Aspect = 90°)."""
+        arr = np.zeros((8, 8), dtype=np.float32)
+        for c in range(8):
+            arr[:, c] = (7 - c) * 10.0  # Col 0 (West) is 70m, Col 7 (East) is 0m
+        path = tmp_path / "east_descent.tif"
+        write_geotiff(path, arr, {"minx": 0, "miny": 0, "maxx": 80, "maxy": 80}, 10.0, 10.0)
+        data, meta = inspect_geotiff(path)
+        _, mask = compute_elevation_stats(data)
+        slope, aspect, _, _ = calculate_slope_and_aspect(data, meta, mask)
+
+        interior = aspect[2:6, 2:6]
+        assert np.allclose(interior, 90.0, atol=1.0)
+
+    def test_westward_aspect_gradient(self, tmp_path: Path):
+        """Terrain rising East, descending West -> Steepest descent is West (Aspect = 270°)."""
+        arr = np.zeros((8, 8), dtype=np.float32)
+        for c in range(8):
+            arr[:, c] = c * 10.0  # Col 0 (West) is 0m, Col 7 (East) is 70m
+        path = tmp_path / "west_descent.tif"
+        write_geotiff(path, arr, {"minx": 0, "miny": 0, "maxx": 80, "maxy": 80}, 10.0, 10.0)
+        data, meta = inspect_geotiff(path)
+        _, mask = compute_elevation_stats(data)
+        slope, aspect, _, _ = calculate_slope_and_aspect(data, meta, mask)
+
+        interior = aspect[2:6, 2:6]
+        assert np.allclose(interior, 270.0, atol=1.0)
+
+    def test_diagonal_southwest_gradient(self, tmp_path: Path):
+        """Terrain rising Northeast, descending Southwest -> Aspect = 225°."""
+        arr = np.zeros((8, 8), dtype=np.float32)
+        for r in range(8):
+            for c in range(8):
+                # Row 0 is North, Col 7 is East. Northeast is (r=0, c=7).
+                # Height increases as r decreases (North) and c increases (East).
+                arr[r, c] = ((7 - r) + c) * 10.0
+        path = tmp_path / "sw_descent.tif"
+        write_geotiff(path, arr, {"minx": 0, "miny": 0, "maxx": 80, "maxy": 80}, 10.0, 10.0)
+        data, meta = inspect_geotiff(path)
+        _, mask = compute_elevation_stats(data)
+        slope, aspect, _, _ = calculate_slope_and_aspect(data, meta, mask)
+
+        interior = aspect[2:6, 2:6]
+        assert np.allclose(interior, 225.0, atol=1.5)
+
+    def test_diagonal_northwest_gradient(self, tmp_path: Path):
+        """Terrain rising Southeast, descending Northwest -> Aspect = 315°."""
+        arr = np.zeros((8, 8), dtype=np.float32)
+        for r in range(8):
+            for c in range(8):
+                # Southeast is (r=7, c=7). Height increases with r and c.
+                arr[r, c] = (r + c) * 10.0
+        path = tmp_path / "nw_descent.tif"
+        write_geotiff(path, arr, {"minx": 0, "miny": 0, "maxx": 80, "maxy": 80}, 10.0, 10.0)
+        data, meta = inspect_geotiff(path)
+        _, mask = compute_elevation_stats(data)
+        slope, aspect, _, _ = calculate_slope_and_aspect(data, meta, mask)
+
+        interior = aspect[2:6, 2:6]
+        assert np.allclose(interior, 315.0, atol=1.5)
+
+    def test_undersized_raster_fails_gracefully(self):
+        """Array of size 1x1 raises clear ValueError for 2D gradient slope."""
+        tiny_dem = np.array([[100.0]], dtype=np.float32)
+        from backend.app.schemas.geospatial import RasterMetadata
+        meta = RasterMetadata(
+            filename="tiny.tif", width=1, height=1, bands=1, dtype="float32",
+            pixel_size_x=10.0, pixel_size_y=10.0, bounds={"minx": 0, "miny": 0, "maxx": 10, "maxy": 10},
+            valid_pixel_count=1, nodata_pixel_count=0,
+        )
+        with pytest.raises(ValueError) as exc:
+            calculate_slope_and_aspect(tiny_dem, meta, np.array([[True]]))
+        assert "minimum size is 2x2" in str(exc.value)
+
+
+class TestNDVIAlignmentAndValidation:
+    """Tests for Sentinel-2 grid alignment, CRS matching, and spatial validation."""
+
+    def test_ndvi_mismatched_bounds_rejected(self, tmp_path: Path):
+        red = np.full((6, 6), 0.1, dtype=np.float32)
+        nir = np.full((6, 6), 0.5, dtype=np.float32)
+
+        p_red = tmp_path / "b4.tif"
+        p_nir = tmp_path / "b8.tif"
+        write_geotiff(p_red, red, {"minx": 0.0, "miny": 0.0, "maxx": 60.0, "maxy": 60.0}, 10.0, 10.0)
+        # Shift NIR bounding box by 500 meters
+        write_geotiff(p_nir, nir, {"minx": 500.0, "miny": 500.0, "maxx": 560.0, "maxy": 560.0}, 10.0, 10.0)
+
+        from backend.app.core.geospatial.ndvi import process_sentinel2_ndvi
+        with pytest.raises(ValueError) as exc:
+            process_sentinel2_ndvi(p_red, p_nir)
+        assert "bounding boxes do not align" in str(exc.value)
+
+    def test_ndvi_mismatched_crs_rejected(self, tmp_path: Path):
+        red = np.full((6, 6), 0.1, dtype=np.float32)
+        nir = np.full((6, 6), 0.5, dtype=np.float32)
+
+        p_red = tmp_path / "b4_utm.tif"
+        p_nir = tmp_path / "b8_wgs.tif"
+        write_geotiff(p_red, red, {"minx": 0, "miny": 0, "maxx": 60, "maxy": 60}, 10.0, 10.0, crs_str="EPSG:32610")
+        write_geotiff(p_nir, nir, {"minx": 0, "miny": 0, "maxx": 60, "maxy": 60}, 10.0, 10.0, crs_str="EPSG:4326")
+
+        from backend.app.core.geospatial.ndvi import process_sentinel2_ndvi
+        with pytest.raises(ValueError) as exc:
+            process_sentinel2_ndvi(p_red, p_nir)
+        assert "Coordinate Reference System mismatch" in str(exc.value)
+

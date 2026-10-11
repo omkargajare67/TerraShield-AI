@@ -29,6 +29,23 @@ class Settings(BaseModel):
     # Supported scenarios
     SUPPORTED_SCENARIOS: list[str] = ["landslide_mitigation"]
 
+    # Real Pilot Study Region Configuration (Western Ghats Pilot Corridor)
+    PILOT_STUDY_AREA_NAME: str = "Western Ghats Corridor (Intended Pilot Study Area)"
+    PILOT_STUDY_AREA_DESCRIPTION: str = (
+        "Ecologically sensitive Western Ghats mountain corridor across Kerala, Tamil Nadu, "
+        "and Karnataka, prone to monsoon-induced shallow slope failures."
+    )
+    PILOT_STUDY_AREA_BOUNDS: dict[str, float] = {
+        "min_lat": 9.2,
+        "max_lat": 12.0,
+        "min_lon": 75.8,
+        "max_lon": 77.5,
+    }
+    PILOT_RECOMMENDED_CRS: str = "EPSG:32643 (WGS 84 / UTM zone 43N)"
+
+    # Synthetic Test Fixture Basin
+    DEMO_STUDY_AREA_NAME: str = "Cascade Foothills Demonstration Basin (Synthetic Test Fixture)"
+
     WARNING_NOTICE: str = (
         "Phase 1 demonstration: sample geometries and attributes are illustrative "
         "and are not verified environmental observations. Results are not validated "

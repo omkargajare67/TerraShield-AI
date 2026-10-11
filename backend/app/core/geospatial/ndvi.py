@@ -102,6 +102,27 @@ def process_sentinel2_ndvi(
             f"Red band: {red_arr.shape}, NIR band: {nir_arr.shape}."
         )
 
+    # Validate spatial bounding box alignment
+    rb = red_meta.bounds
+    nb = nir_meta.bounds
+    if not (
+        np.isclose(rb["minx"], nb["minx"], atol=1.0)
+        and np.isclose(rb["miny"], nb["miny"], atol=1.0)
+        and np.isclose(rb["maxx"], nb["maxx"], atol=1.0)
+        and np.isclose(rb["maxy"], nb["maxy"], atol=1.0)
+    ):
+        raise ValueError(
+            f"Input bands spatial bounding boxes do not align. "
+            f"Red bounds: {rb}, NIR bounds: {nb}."
+        )
+
+    # Validate CRS compatibility
+    if red_meta.crs and nir_meta.crs and red_meta.crs != nir_meta.crs:
+        raise ValueError(
+            f"Coordinate Reference System mismatch between input bands: "
+            f"Red is '{red_meta.crs}', but NIR is '{nir_meta.crs}'."
+        )
+
     ndvi_arr, stats = calculate_ndvi_array(
         red_arr, nir_arr, red_meta.nodata_value, nir_meta.nodata_value
     )

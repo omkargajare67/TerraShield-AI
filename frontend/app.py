@@ -349,21 +349,38 @@ def main():
     with tab_env:
         render_soil_and_vector_section(API_BASE_URL)
 
-    # Tab 6: Study Area Details
+    # Tab 6: Study Area Details & Pilot Corridor
     with tab_study:
-        st.markdown("### Study Area Provenance & Synthetic Metadata")
+        st.markdown("### 📍 Intended Project Pilot Corridor: Western Ghats")
         st.markdown(
             """
-            - **Illustrative Region:** Cascade Foothills Demonstration Basin (Synthetic Study Area)
-            - **Approximate Center Coordinates:** `47.452° N, -121.780° W`
-            - **Coordinate Reference System:** `EPSG:4326 (WGS 84)`
-            - **Data Nature:** Deterministic synthetic parcels constructed for pipeline validation.
-            - **Environmental Exclusion Tests:** Includes simulated WDPA statutory boundary and shallow bedrock constraints.
-            - **Planned Future Data Ingestion:**
-              - NASA SRTM 30m Digital Elevation Model
-              - Copernicus Sentinel-2 multispectral imagery
-              - ISRIC SoilGrids 250m soil property rasters
-              - World Database on Protected Areas (WDPA) vectors
+            TerraShield AI is designed for real-world deployment in the **Western Ghats Mountain Corridor (India)**,
+            an internationally recognized biodiversity hotspot that experiences severe monsoon-triggered shallow landslides
+            and steep-slope soil loss.
+
+            - **Intended Pilot Region:** Western Ghats Corridor (Kerala, Tamil Nadu, Karnataka)
+            - **Geographic Bounding Box:** `9.20° N – 12.00° N`, `75.80° E – 77.50° E`
+            - **Recommended Projected CRS:** `EPSG:32643 (WGS 84 / UTM Zone 43N)`
+            - **Target Environmental Risks:** Steep-slope debris flows, rainfall-induced shallow slips, and agricultural buffer loss.
+            """
+        )
+        st.divider()
+        st.markdown("### 🧪 Synthetic Test Fixtures (Cascade Foothills Demo)")
+        st.markdown(
+            """
+            The built-in sample parcel dataset and test rasters use the **Cascade Foothills Demonstration Basin**:
+            - **Nature:** 100% deterministic synthetic geometries and attributes generated for automated test suites.
+            - **Coordinates:** Centered at `47.452° N, -121.780° W` (`EPSG:4326`).
+            - **Notice:** This synthetic data must not be confused with real environmental observations in the Western Ghats.
+            """
+        )
+        st.divider()
+        st.markdown("### 🏷️ TerraShield AI Three-Tier Data Provenance Model")
+        st.markdown(
+            """
+            1. **Synthetic Test Data:** Deterministic offline fixtures for code validation without external network dependencies.
+            2. **Real Environmental Observations:** Genuine satellite (Sentinel-2 L2A), elevation (SRTM/LiDAR), soil (ISRIC), and reserve (WDPA) inputs uploaded or supplied by users.
+            3. **Derived Geospatial Products:** Continuous Slope, Aspect, and NDVI continuous rasters computed deterministically from verified inputs.
             """
         )
 

@@ -73,7 +73,10 @@ async def get_geospatial_status() -> GeospatialEngineStatus:
         supported_raster_formats=["GeoTIFF (.tif, .tiff)"],
         supported_vector_formats=["GeoJSON (.geojson, .json)"],
         native_gdal_available=False,
-        available_sample_datasets=["demo_parcels.geojson"],
+        available_sample_datasets=["demo_parcels.geojson", "synthetic_demo_dem.tif"],
+        intended_pilot_region=settings.PILOT_STUDY_AREA_NAME,
+        pilot_bounds=settings.PILOT_STUDY_AREA_BOUNDS,
+        demo_study_area=settings.DEMO_STUDY_AREA_NAME,
     )
 
 
