@@ -28,7 +28,7 @@ def render_recommendation_tab(api_base_url: str):
         """
         <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 0.9rem; border-radius: 6px; margin-bottom: 1.2rem; font-size: 0.9rem; color: #92400e;">
             <strong>⚠️ Scientific Integrity & Provenance Notice:</strong><br>
-            • <strong>Genuine Observations:</strong> Copernicus 30m DEM and Sentinel-2 10m NDVI (Wayanad pilot basin).<br>
+            • <strong>Genuine Observations:</strong> NASA SRTM NASADEM Global 1 Arc-Second V001 (NASADEM_HGT_n11e076) and Sentinel-2 10m NDVI (Wayanad pilot basin).<br>
             • <strong>Illustrative Scenario:</strong> Geotechnical Factor of Safety layers use user-supplied spatially uniform exploratory parameters.<br>
             • <strong>Leverage Metric Safeguard:</strong> Modeled ΔFS is a mechanical index, NOT empirical landslide risk reduction (ΔR). True leverage <em>L = ΔR / N</em> requires calibrated disaster probability curves.<br>
             • <strong>Protected Areas:</strong> Official cadastral reserve boundary layer unverified. Clearance remains pending local cadastral confirmation.
@@ -53,7 +53,7 @@ def render_recommendation_tab(api_base_url: str):
             st.markdown("**Real Environmental Observations**")
             dem_ok = input_layers.get("dem", {}).get("available", False)
             ndvi_ok = input_layers.get("ndvi", {}).get("available", False)
-            st.write(f"🏔️ DEM Elevation: {'✅ Available (Copernicus 30m)' if dem_ok else '❌ Missing'}")
+            st.write(f"🏔️ DEM Elevation: {'✅ Available (NASA NASADEM 30m)' if dem_ok else '❌ Missing'}")
             st.write(f"🌿 Sentinel-2 NDVI: {'✅ Available (10m BOA)' if ndvi_ok else '❌ Missing'}")
             slope_ok = input_layers.get("slope", {}).get("available", False)
             st.write(f"📐 Slope Gradient: {'✅ Derived (30m Horn)' if slope_ok else '❌ Missing'}")
@@ -103,6 +103,35 @@ def render_recommendation_tab(api_base_url: str):
         w_area = st.slider("Plantable Acreage", min_value=0.0, max_value=1.0, value=0.20, step=0.05)
         w_conf = st.slider("Data Confidence", min_value=0.0, max_value=1.0, value=0.15, step=0.05)
 
+    # Normalization Settings & Missing Data Policy Expander
+    with st.expander("⚖️ Normalization Settings & Missing Data Policy", expanded=False):
+        c_n1, c_n2, c_n3 = st.columns(3)
+        with c_n1:
+            max_delta_fs_ref = st.number_input(
+                "Stability Gain Divisor (ΔFS ref)",
+                value=15.0,
+                min_value=1.0,
+                max_value=50.0,
+                step=1.0,
+                help="Upper normalization reference for modeled Factor of Safety improvement.",
+            )
+        with c_n2:
+            max_area_ref_ha = st.number_input(
+                "Plantable Area Divisor (ha ref)",
+                value=15.0,
+                min_value=1.0,
+                max_value=100.0,
+                step=1.0,
+                help="Upper normalization reference for plantable parcel acreage.",
+            )
+        with c_n3:
+            missing_policy = st.selectbox(
+                "Missing Data Policy",
+                options=["RENORMALIZE_AVAILABLE", "ZERO_FILL", "BLOCK_UNAVAILABLE"],
+                index=0,
+                help="RENORMALIZE_AVAILABLE: Re-distributes weights across available components if an optional layer is missing.",
+            )
+
     # Optional Budget Allocation Expander
     with st.expander("💰 Optional Silvicultural Budget Allocation", expanded=False):
         c_b1, c_b2, c_b3 = st.columns(3)
@@ -136,6 +165,13 @@ def render_recommendation_tab(api_base_url: str):
                     "weight_plantable_area": float(w_area),
                     "weight_data_confidence": float(w_conf),
                 },
+                "normalization_config": {
+                    "fs_target": 1.3,
+                    "critical_fs": 0.7,
+                    "max_delta_fs_ref": float(max_delta_fs_ref),
+                    "max_area_ref_ha": float(max_area_ref_ha),
+                },
+                "missing_data_policy": missing_policy,
                 "fs_target": 1.3,
             }
             if enable_budget:
@@ -176,6 +212,12 @@ def render_recommendation_tab(api_base_url: str):
         st.metric("Disqualified / Excluded", f"{rec_data.get('excluded_count', 0):,}")
     with kpi4:
         st.metric("Plantable Acreage", f"{rec_data.get('total_plantable_area_ha', 0.0):.1f} ha")
+
+    # Policy and missing layers info
+    policy_name = rec_data.get("applied_missing_data_policy", "RENORMALIZE_AVAILABLE")
+    missing_layers = rec_data.get("missing_layers_detected", [])
+    if missing_layers:
+        st.info(f"ℹ️ **Missing Data Policy Applied ({policy_name}):** The following layers were absent: {', '.join(missing_layers)}. Active component weights were adjusted accordingly.")
 
     # Budget summary if present
     b_sum = rec_data.get("budget_summary")

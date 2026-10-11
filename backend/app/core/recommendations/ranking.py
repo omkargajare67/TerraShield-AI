@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 
 from backend.app.core.recommendations.eligibility import EligibilityStatus
 from backend.app.core.recommendations.scoring import (
+    MissingDataPolicy,
+    NormalizationConfig,
     ParcelScoreBreakdown,
     ScoringWeights,
     calculate_parcel_score,
@@ -42,6 +44,9 @@ class RankingResult(BaseModel):
     excluded_parcels: List[EvaluatedParcel]
     insufficient_data_parcels: List[EvaluatedParcel]
     scoring_weights: ScoringWeights
+    normalization_config: NormalizationConfig = Field(default_factory=NormalizationConfig)
+    applied_missing_data_policy: str = MissingDataPolicy.RENORMALIZE_AVAILABLE.value
+    missing_components_detected: List[str] = Field(default_factory=list)
     ranking_timestamp: str
 
 
@@ -50,6 +55,8 @@ def rank_candidate_parcels(
     run_id: str,
     timestamp: str,
     scoring_weights: Optional[ScoringWeights] = None,
+    normalization_config: Optional[NormalizationConfig] = None,
+    missing_data_policy: MissingDataPolicy = MissingDataPolicy.RENORMALIZE_AVAILABLE,
     fs_target: float = 1.3,
 ) -> RankingResult:
     """Rank eligible candidate parcels deterministically using multi-criteria priority scores.
@@ -59,29 +66,36 @@ def rank_candidate_parcels(
     2. Only ELIGIBLE_UNDER_AVAILABLE_CONSTRAINTS parcels receive priority scores and ordinal ranks.
     3. Sorting is strictly deterministic:
        - priority_score_index (descending)
-       - stability_gain_score (descending)
+       - stability_gain_score (descending, if available)
        - plantable_area_ha (descending)
        - parcel_id (ascending string comparison)
     4. Leverage calculation:
        - Evaluates modeled_stability_gain_per_stem if calibrated tree density exists.
-       - Explains why true risk reduction leverage (delta R / N) cannot be computed.
+       - Discloses why true risk reduction leverage (delta R / N) cannot be computed.
+    5. Normalization is strictly deterministic and consistent across all parcels in the run.
     """
     weights = (scoring_weights or ScoringWeights()).normalized()
+    norm_cfg = normalization_config or NormalizationConfig(fs_target=fs_target)
 
     eligible_list: List[EvaluatedParcel] = []
     excluded_list: List[EvaluatedParcel] = []
     insufficient_list: List[EvaluatedParcel] = []
+    all_missing_components: set = set()
 
     for p in evaluated_parcels:
         if p.eligibility_status == EligibilityStatus.ELIGIBLE_UNDER_AVAILABLE_CONSTRAINTS:
-            # Compute score breakdown
+            # Compute score breakdown with explicit missing data policy and normalization config
             score = calculate_parcel_score(
                 metrics=p.metrics,
                 plantable_area_ha=p.plantable_area_ha,
                 weights=weights,
+                normalization_config=norm_cfg,
+                missing_data_policy=missing_data_policy,
                 fs_target=fs_target,
             )
             p.score_breakdown = score
+            for c in score.missing_components:
+                all_missing_components.add(c)
 
             # Evaluate leverage / stability gain per stem
             tree_density_mean = p.metrics.get("tree_density_mean_stems_ha")
@@ -92,7 +106,6 @@ def rank_candidate_parcels(
                 total_stems = round(tree_density_mean * p.plantable_area_ha, 1)
                 p.estimated_required_stems = total_stems
                 if fs_delta_mean is not None and total_stems > 0:
-                    # delta_FS / total_stems
                     gain_per_stem = fs_delta_mean / total_stems
                     p.modeled_stability_gain_per_stem = round(gain_per_stem, 6)
                     p.leverage_metric_note = (
@@ -128,7 +141,7 @@ def rank_candidate_parcels(
     def sort_key(item: EvaluatedParcel):
         sc = item.score_breakdown
         priority = sc.priority_score_index if sc else -1.0
-        gain = sc.stability_gain_score if sc else -1.0
+        gain = sc.stability_gain_score if (sc and sc.stability_gain_score is not None) else -1.0
         area = item.plantable_area_ha
         return (-priority, -gain, -area, item.parcel_id)
 
@@ -148,5 +161,8 @@ def rank_candidate_parcels(
         excluded_parcels=excluded_list,
         insufficient_data_parcels=insufficient_list,
         scoring_weights=weights,
+        normalization_config=norm_cfg,
+        applied_missing_data_policy=missing_data_policy.value,
+        missing_components_detected=sorted(list(all_missing_components)),
         ranking_timestamp=timestamp,
     )

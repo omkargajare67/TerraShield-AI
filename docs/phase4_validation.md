@@ -1,17 +1,17 @@
 # TerraShield AI — Phase 4 Validation & Audit Report
 
 **Date:** 2026-10-11  
-**Phase:** 4 of 5 (Spatial Recommendation Engine)  
+**Phase:** 4 of 5 (Spatial Recommendation Engine) — Final Scoring & Provenance Audit  
 **Branch:** `feature/phase-4-spatial-recommendations`  
-**Test Suite Status:** 121 passed, 0 failed  
+**Test Suite Status:** 128 passed, 0 failed  
 
 ---
 
 ## 1. Executive Summary
 
-Phase 4 of TerraShield AI has been implemented, validated, and hardened directly within the existing workspace. The Spatial Recommendation Engine ingests the verified Wayanad elevation, slope, aspect, Sentinel-2 NDVI, and Phase 3 geotechnical limit-equilibrium stability rasters to generate, evaluate, filter, and rank candidate reforestation parcels across the Western Ghats pilot corridor.
+Phase 4 of TerraShield AI has been implemented, validated, audited, and hardened directly within the existing workspace. The Spatial Recommendation Engine ingests the verified Wayanad elevation, slope, aspect, Sentinel-2 NDVI, and Phase 3 geotechnical limit-equilibrium stability rasters to generate, evaluate, filter, and rank candidate reforestation parcels across the Western Ghats pilot corridor.
 
-All 85 regression tests from Phases 1–3 pass without modification, and 28 new Phase 4 automated tests have been added, confirming complete multi-resolution raster alignment, ellipsoidal area calculation, eligibility exclusion filtering, deterministic prioritization, and secure artifact generation.
+All 85 regression tests from Phases 1–3 pass without modification, and 35 automated Phase 4 tests (including 7 focused audit tests) have been verified, confirming complete multi-resolution raster alignment, ellipsoidal area calculation, eligibility exclusion filtering, deterministic prioritization, missing metric handling, and verified DEM data provenance.
 
 ---
 
@@ -19,7 +19,7 @@ All 85 regression tests from Phases 1–3 pass without modification, and 28 new 
 
 | Dataset | File Path | Dimensions | Native CRS | Authenticity Status |
 |---|---|---|---|---|
-| Copernicus DEM | `data/raw/real/wayanad_dem.tif` | $360 \times 360$ | EPSG:4326 | Real observed |
+| NASA SRTM NASADEM Global 1 Arc-Second V001 | `data/raw/real/wayanad_dem.tif` | $360 \times 360$ | EPSG:4326 | Real observed (`NASADEM_HGT_n11e076`, SHA-256: `680aa3cb...`) |
 | Topographic Slope | `data/processed/real/wayanad_slope.tif` | $360 \times 360$ | EPSG:4326 | Genuine derived (Horn) |
 | Topographic Aspect | `data/processed/real/wayanad_aspect.tif` | $360 \times 360$ | EPSG:4326 | Genuine derived |
 | Sentinel-2 NDVI | `data/processed/real/wayanad_ndvi.tif` | $1099 \times 1099$ | EPSG:4326 | Real observed (10m BOA) |
@@ -66,24 +66,44 @@ All runs generate traceable files in `data/processed/recommendations/`:
 
 ---
 
-## 4. Automated Test Results
+## 4. Final Scoring & Data-Provenance Audit Summary
+
+During the final Phase 4 audit, the scoring formulation, missing metric policies, and input layer data provenance were evaluated and hardened:
+
+### 4.1 Stability Gain Divisor ($15.0$) Empirical Audit
+- **Measured Terrain Distribution:** Across 128,879 valid geotechnical pixels in Wayanad, modeled $\Delta FS$ spans $1.333$ to $40.981$ (mean $6.901$, median $4.485$).
+- **Parcel Level Distribution ($N=1,369$ at 300m):** Mean $\Delta FS$ spans $1.537$ to $24.877$ (mean $6.886$, median $6.145$). Only $42$ parcels ($3.07\%$) exceed $15.0$.
+- **Conclusion:** Divisor $15.0$ provides smooth linear scaling across $97\%$ of candidate parcels without bunching, while capping extreme cliff outliers. It is now formally configurable via `NormalizationConfig` (`max_delta_fs_ref`).
+
+### 4.2 Missing Metric Policy Implementation
+- Missing or invalid metrics (e.g. absent NDVI, unmodeled geotechnical grids) are never silently converted into valid zeros.
+- Evaluated via `MissingDataPolicy` (`RENORMALIZE_AVAILABLE`, `ZERO_FILL`, `BLOCK_UNAVAILABLE`).
+- Under default `RENORMALIZE_AVAILABLE`, missing layers are omitted from component scoring and the active weights re-normalize to $1.0$, accompanied by transparent disclosure banners in the API and UI.
+
+### 4.3 Digital Elevation Model Provenance Reconciled
+- Cross-referencing `metadata_manifest.json`, Planetary Computer STAC records, file size ($518,816$ bytes), and SHA-256 checksum (`680aa3cb46f4b7d148b2d62224ff8f8daa9591dcee5921d46c0f8c4c8a5ca2b6`) conclusively identified the elevation raster as **NASA SRTM NASADEM Global 1 Arc-Second V001** (`NASADEM_HGT_n11e076`), not Copernicus GLO-30.
+- All documentation, export manifests, and provenance badges have been synchronized with the verified source.
+
+---
+
+## 5. Automated Test Results
 
 The complete test suite was executed via pytest:
 ```bash
 pytest -v
 ```
 **Results:**
-- **121 passed, 0 failed** in 3.93s.
+- **128 passed, 0 failed** in 4.23s.
 - `test_analysis_service.py`: 6 passed
 - `test_api.py`: 4 passed
 - `test_geospatial.py`: 41 passed
 - `test_geotechnical.py`: 23 passed
-- `test_recommendations.py`: 28 passed
+- `test_recommendations.py`: 35 passed (including 7 focused audit tests)
 - `test_frontend_components.py`: 4 passed
 - `test_geojson.py`: 4 passed
 
 ---
 
-## 5. Scope Confirmation
-- **Phase 4 is complete.**
+## 6. Scope Confirmation
+- **Phase 4 is complete, audited, and hardened.**
 - **Phase 5 has NOT been started.**

@@ -14,7 +14,7 @@ class ParcelExplanation(BaseModel):
     priority_score_index: Optional[float]
     eligibility_summary: str
     exclusion_details: List[str]
-    score_component_contributions: Dict[str, float]
+    score_component_contributions: Dict[str, Optional[float]]
     primary_ranking_drivers: List[str]
     topographic_context: str
     geotechnical_context: str
@@ -45,37 +45,47 @@ def generate_parcel_explanation(
         )
 
     # 2. Score contributions
-    contributions: Dict[str, float] = {}
+    contributions: Dict[str, Optional[float]] = {}
     drivers: List[str] = []
 
     if sc is not None:
-        w = sc.score_weights_used
-        c_need = round(w.weight_geotechnical_need * sc.geotechnical_need_score * 100.0, 1)
-        c_gain = round(w.weight_stability_gain * sc.stability_gain_score * 100.0, 1)
+        w = sc.score_weights_active
+
+        if sc.geotechnical_need_score is not None:
+            c_need = round(w.weight_geotechnical_need * sc.geotechnical_need_score * 100.0, 1)
+            contributions["geotechnical_need_points"] = c_need
+        else:
+            c_need = None
+            contributions["geotechnical_need_points"] = None
+
+        if sc.stability_gain_score is not None:
+            c_gain = round(w.weight_stability_gain * sc.stability_gain_score * 100.0, 1)
+            contributions["stability_gain_points"] = c_gain
+        else:
+            c_gain = None
+            contributions["stability_gain_points"] = None
+
         c_area = round(w.weight_plantable_area * sc.plantable_area_score * 100.0, 1)
         c_conf = round(w.weight_data_confidence * sc.data_confidence_score * 100.0, 1)
 
-        contributions = {
-            "geotechnical_need_points": c_need,
-            "stability_gain_points": c_gain,
-            "plantable_area_points": c_area,
-            "data_confidence_points": c_conf,
-        }
+        contributions["plantable_area_points"] = c_area
+        contributions["data_confidence_points"] = c_conf
 
-        # Identify primary drivers
-        ranked_components = sorted(
-            [
-                ("Geotechnical Stability Deficit", c_need),
-                ("Modeled Root Reinforcement Gain", c_gain),
-                ("Plantable Acreage Capacity", c_area),
-                ("Input Data Completeness", c_conf),
-            ],
-            key=lambda x: x[1],
-            reverse=True,
-        )
+        # Identify primary drivers among available components
+        ranked_components = []
+        if c_need is not None:
+            ranked_components.append(("Geotechnical Stability Deficit", c_need))
+        if c_gain is not None:
+            ranked_components.append(("Modeled Root Reinforcement Gain", c_gain))
+        ranked_components.append(("Plantable Acreage Capacity", c_area))
+        ranked_components.append(("Input Data Completeness", c_conf))
+
+        ranked_components.sort(key=lambda x: x[1], reverse=True)
+
         for name, pts in ranked_components:
             if pts > 0.0:
-                drivers.append(f"{name}: +{pts:.1f} pts ({pts / max(0.1, sc.priority_score_index) * 100:.0f}% of total score)")
+                pct = round(pts / max(0.1, sc.priority_score_index) * 100.0)
+                drivers.append(f"{name}: +{pts:.1f} pts ({pct}% of total score)")
 
     # 3. Topographic Context
     slope_mean = m.get("slope_mean_deg")
@@ -111,7 +121,7 @@ def generate_parcel_explanation(
     geo_context = (
         "; ".join(geo_parts) + " (Phase 3 exploratory uniform scenario)"
         if geo_parts
-        else "Geotechnical metrics unavailable."
+        else "Geotechnical metrics unavailable (exploratory scenario not run or layer absent)."
     )
 
     # 5. Vegetation Context
@@ -125,7 +135,7 @@ def generate_parcel_explanation(
     veg_context = (
         "; ".join(veg_parts)
         if veg_parts
-        else "Vegetation/NDVI metrics unavailable."
+        else "Vegetation/NDVI metrics unavailable (Sentinel-2 layer absent)."
     )
 
     # 6. Provenance & Disclosures
@@ -134,6 +144,11 @@ def generate_parcel_explanation(
         "Geotechnical outputs derive from spatially uniform exploratory scenario parameters.",
         "Factor of Safety (FS) is a limit-equilibrium stability index, not measured failure probability.",
     ]
+    if sc and sc.missing_components:
+        disclosures.append(
+            f"Missing Component Policy ({sc.missing_data_policy_applied}): The following layers were unavailable: {', '.join(sc.missing_components)}."
+        )
+
     if provenance:
         disclosures.extend(provenance.scientific_disclosures[:2])
 

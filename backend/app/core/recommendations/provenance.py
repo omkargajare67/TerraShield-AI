@@ -66,10 +66,14 @@ def build_recommendation_provenance(
         "elevation": DatasetProvenance(
             layer_name="wayanad_dem.tif",
             category="REAL_OBSERVED",
-            source_description="Copernicus 30m Global DEM (GLO-30) / ALOS AW3D30 elevation tile",
-            spatial_resolution_approx="~30.8 meters (0.0002778 deg)",
+            source_description="NASA SRTM NASADEM Global 1 Arc-Second V001 (Item: NASADEM_HGT_n11e076)",
+            spatial_resolution_approx="1 arc-second (~30.8 meters, 0.0002778 deg)",
             is_field_validated=True,
-            limitations=["Contains satellite radar elevation error, canopy height bias in heavily forested zones."],
+            limitations=[
+                "Derived from Space Shuttle Radar Topography Mission C-band radar with ALOS/ASTER void-filling.",
+                "Contains C-band radar elevation bias over dense tropical wet evergreen forest canopies.",
+                "SHA-256 verified against Microsoft Planetary Computer STAC: 680aa3cb46f4b7d148b2d62224ff8f8daa9591dcee5921d46c0f8c4c8a5ca2b6.",
+            ],
         ),
         "slope": DatasetProvenance(
             layer_name="wayanad_slope.tif",

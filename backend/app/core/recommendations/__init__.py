@@ -20,6 +20,8 @@ from backend.app.core.recommendations.eligibility import (
     evaluate_parcel_eligibility,
 )
 from backend.app.core.recommendations.scoring import (
+    MissingDataPolicy,
+    NormalizationConfig,
     ParcelScoreBreakdown,
     ScoringWeights,
     calculate_parcel_score,

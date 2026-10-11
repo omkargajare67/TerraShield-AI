@@ -29,6 +29,8 @@ from backend.app.core.recommendations.eligibility import (
     evaluate_parcel_eligibility,
 )
 from backend.app.core.recommendations.scoring import (
+    MissingDataPolicy,
+    NormalizationConfig,
     ScoringWeights,
     calculate_parcel_score,
 )
@@ -117,7 +119,7 @@ def get_recommendation_status() -> RecommendationStatusResponse:
     layer_statuses: Dict[str, InputLayerStatus] = {}
 
     descriptions = {
-        "dem": ("Copernicus 30m Global Elevation Tile", "REAL_OBSERVED"),
+        "dem": ("NASA SRTM NASADEM Global 1 Arc-Second (NASADEM_HGT_n11e076)", "REAL_OBSERVED"),
         "slope": ("Horns 8-neighbourhood gradient raster", "DERIVED_GEOSPATIAL"),
         "aspect": ("Topographic compass azimuth raster", "DERIVED_GEOSPATIAL"),
         "ndvi": ("Sentinel-2 BOA Normalized Difference Vegetation Index", "DERIVED_GEOSPATIAL"),
@@ -150,6 +152,7 @@ def get_recommendation_status() -> RecommendationStatusResponse:
         native_crs="EPSG:4326 (WGS 84)",
         supported_cell_sizes_m=[100, 200, 300, 500, 1000],
         input_layers=layer_statuses,
+        dem_verified_source="NASA SRTM NASADEM Global 1 Arc-Second V001 (Item: NASADEM_HGT_n11e076, SHA256: 680aa3cb46f4b7d148b2d62224ff8f8daa9591dcee5921d46c0f8c4c8a5ca2b6)",
         geotechnical_scenario_status=geotech_note,
         protected_area_data_status="UNVERIFIED: Official legal cadastral reserve boundaries not loaded",
         species_database_status="PENDING_CURATED_BOTANICAL_DATA: Scientific evidence registry active (empty)",
@@ -302,12 +305,30 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
         weight_data_confidence=weights_in.weight_data_confidence if weights_in else 0.15,
     )
 
+    norm_in = req.normalization_config
+    norm_cfg = NormalizationConfig(
+        fs_target=norm_in.fs_target if norm_in else req.fs_target,
+        critical_fs=norm_in.critical_fs if norm_in else 0.7,
+        max_delta_fs_ref=norm_in.max_delta_fs_ref if norm_in else 15.0,
+        max_area_ref_ha=norm_in.max_area_ref_ha if norm_in else 15.0,
+    )
+    try:
+        policy_enum = (
+            MissingDataPolicy(req.missing_data_policy.upper())
+            if req.missing_data_policy
+            else MissingDataPolicy.RENORMALIZE_AVAILABLE
+        )
+    except (ValueError, AttributeError):
+        policy_enum = MissingDataPolicy.RENORMALIZE_AVAILABLE
+
     ranking_result = rank_candidate_parcels(
         evaluated_parcels=evaluated_list,
         run_id=run_id,
         timestamp=timestamp,
         scoring_weights=scoring_w,
-        fs_target=req.fs_target,
+        normalization_config=norm_cfg,
+        missing_data_policy=policy_enum,
+        fs_target=norm_cfg.fs_target,
     )
 
     # 6. Build Provenance
@@ -383,6 +404,12 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
 
     tot_plantable = sum(p.plantable_area_ha for p in ranking_result.ranked_eligible_parcels)
 
+    active_w = (
+        ranking_result.ranked_eligible_parcels[0].score_breakdown.score_weights_active.model_dump()
+        if ranking_result.ranked_eligible_parcels and ranking_result.ranked_eligible_parcels[0].score_breakdown
+        else ranking_result.scoring_weights.model_dump()
+    )
+
     return RecommendationRunResponse(
         run_id=run_id,
         timestamp=timestamp,
@@ -393,6 +420,11 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
         total_plantable_area_ha=round(tot_plantable, 2),
         top_recommendations=top_summaries,
         scoring_weights_normalized=ranking_result.scoring_weights.model_dump(),
+        scoring_weights_active=active_w,
+        applied_missing_data_policy=ranking_result.applied_missing_data_policy,
+        missing_layers_detected=ranking_result.missing_components_detected,
+        normalization_references=norm_cfg.model_dump(),
+        dem_source_provenance="NASA SRTM NASADEM Global 1 Arc-Second V001 (NASADEM_HGT_n11e076)",
         provenance_warning=provenance.geotechnical_scenario_note,
         artifacts=artifacts,
         budget_summary=budget_res,

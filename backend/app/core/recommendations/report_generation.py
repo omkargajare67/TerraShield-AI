@@ -68,6 +68,9 @@ def export_candidate_parcels_geojson(
             "eligible_parcels": ranking_result.eligible_count,
             "excluded_parcels": ranking_result.excluded_count,
             "insufficient_data_parcels": ranking_result.insufficient_data_count,
+            "applied_missing_data_policy": ranking_result.applied_missing_data_policy,
+            "missing_components_detected": ranking_result.missing_components_detected,
+            "normalization_references": ranking_result.normalization_config.model_dump(),
         },
         "features": features,
     }
@@ -136,26 +139,26 @@ def export_parcel_metrics_csv(
                 "total_area_ha": round(p.total_area_ha, 4),
                 "plantable_area_ha": round(p.plantable_area_ha, 4),
                 "exclusion_reasons": "; ".join(p.exclusion_reasons) if p.exclusion_reasons else "",
-                "terrain_coverage_pct": m.get("terrain_coverage_pct", ""),
-                "elevation_mean_m": m.get("elevation_mean_m", ""),
-                "elevation_min_m": m.get("elevation_min_m", ""),
-                "elevation_max_m": m.get("elevation_max_m", ""),
-                "slope_mean_deg": m.get("slope_mean_deg", ""),
-                "slope_median_deg": m.get("slope_median_deg", ""),
-                "slope_max_deg": m.get("slope_max_deg", ""),
-                "fraction_steep_slope": m.get("fraction_steep_slope", ""),
-                "fs_baseline_mean": m.get("fs_baseline_mean", ""),
-                "fs_baseline_median": m.get("fs_baseline_median", ""),
-                "fraction_unstable_fs": m.get("fraction_unstable_fs", ""),
-                "fraction_subtarget_fs": m.get("fraction_subtarget_fs", ""),
-                "fs_reinforced_mean": m.get("fs_reinforced_mean", ""),
-                "fs_reinforced_median": m.get("fs_reinforced_median", ""),
-                "fs_delta_mean": m.get("fs_delta_mean", ""),
-                "required_cohesion_mean_kpa": m.get("required_cohesion_mean_kpa", ""),
-                "tree_density_mean_stems_ha": m.get("tree_density_mean_stems_ha", ""),
-                "ndvi_mean": m.get("ndvi_mean", ""),
-                "ndvi_coverage_pct": m.get("ndvi_coverage_pct", ""),
-                "fraction_dense_canopy_proxy": m.get("fraction_dense_canopy_proxy", ""),
+                "terrain_coverage_pct": m.get("terrain_coverage_pct", "") if m.get("terrain_coverage_pct") is not None else "",
+                "elevation_mean_m": m.get("elevation_mean_m", "") if m.get("elevation_mean_m") is not None else "",
+                "elevation_min_m": m.get("elevation_min_m", "") if m.get("elevation_min_m") is not None else "",
+                "elevation_max_m": m.get("elevation_max_m", "") if m.get("elevation_max_m") is not None else "",
+                "slope_mean_deg": m.get("slope_mean_deg", "") if m.get("slope_mean_deg") is not None else "",
+                "slope_median_deg": m.get("slope_median_deg", "") if m.get("slope_median_deg") is not None else "",
+                "slope_max_deg": m.get("slope_max_deg", "") if m.get("slope_max_deg") is not None else "",
+                "fraction_steep_slope": m.get("fraction_steep_slope", "") if m.get("fraction_steep_slope") is not None else "",
+                "fs_baseline_mean": m.get("fs_baseline_mean", "") if m.get("fs_baseline_mean") is not None else "",
+                "fs_baseline_median": m.get("fs_baseline_median", "") if m.get("fs_baseline_median") is not None else "",
+                "fraction_unstable_fs": m.get("fraction_unstable_fs", "") if m.get("fraction_unstable_fs") is not None else "",
+                "fraction_subtarget_fs": m.get("fraction_subtarget_fs", "") if m.get("fraction_subtarget_fs") is not None else "",
+                "fs_reinforced_mean": m.get("fs_reinforced_mean", "") if m.get("fs_reinforced_mean") is not None else "",
+                "fs_reinforced_median": m.get("fs_reinforced_median", "") if m.get("fs_reinforced_median") is not None else "",
+                "fs_delta_mean": m.get("fs_delta_mean", "") if m.get("fs_delta_mean") is not None else "",
+                "required_cohesion_mean_kpa": m.get("required_cohesion_mean_kpa", "") if m.get("required_cohesion_mean_kpa") is not None else "",
+                "tree_density_mean_stems_ha": m.get("tree_density_mean_stems_ha", "") if m.get("tree_density_mean_stems_ha") is not None else "",
+                "ndvi_mean": m.get("ndvi_mean", "") if m.get("ndvi_mean") is not None else "",
+                "ndvi_coverage_pct": m.get("ndvi_coverage_pct", "") if m.get("ndvi_coverage_pct") is not None else "",
+                "fraction_dense_canopy_proxy": m.get("fraction_dense_canopy_proxy", "") if m.get("fraction_dense_canopy_proxy") is not None else "",
                 "modeled_stability_gain_per_stem": p.modeled_stability_gain_per_stem if p.modeled_stability_gain_per_stem is not None else "",
             }
             writer.writerow(row)
@@ -198,15 +201,15 @@ def export_parcel_rankings_csv(
                 "rank": p.rank,
                 "parcel_id": p.parcel_id,
                 "priority_score_index": sc.priority_score_index,
-                "geotechnical_need_score": sc.geotechnical_need_score,
-                "stability_gain_score": sc.stability_gain_score,
+                "geotechnical_need_score": sc.geotechnical_need_score if sc.geotechnical_need_score is not None else "",
+                "stability_gain_score": sc.stability_gain_score if sc.stability_gain_score is not None else "",
                 "plantable_area_score": sc.plantable_area_score,
                 "data_confidence_score": sc.data_confidence_score,
                 "plantable_area_ha": round(p.plantable_area_ha, 4),
                 "total_area_ha": round(p.total_area_ha, 4),
-                "slope_mean_deg": p.metrics.get("slope_mean_deg", ""),
-                "fs_baseline_mean": p.metrics.get("fs_baseline_mean", ""),
-                "fs_delta_mean": p.metrics.get("fs_delta_mean", ""),
+                "slope_mean_deg": p.metrics.get("slope_mean_deg", "") if p.metrics.get("slope_mean_deg") is not None else "",
+                "fs_baseline_mean": p.metrics.get("fs_baseline_mean", "") if p.metrics.get("fs_baseline_mean") is not None else "",
+                "fs_delta_mean": p.metrics.get("fs_delta_mean", "") if p.metrics.get("fs_delta_mean") is not None else "",
                 "modeled_stability_gain_per_stem": p.modeled_stability_gain_per_stem if p.modeled_stability_gain_per_stem is not None else "",
                 "estimated_required_stems": p.estimated_required_stems if p.estimated_required_stems is not None else "",
             }
@@ -241,9 +244,11 @@ def export_recommendation_summary_json(
         "timestamp": ranking_result.ranking_timestamp,
         "study_area_crs": provenance.study_area_crs,
         "metrics_and_scoring": {
-            "scoring_model_version": "v1.0-explainable-multi-criteria",
-            "weights_applied": ranking_result.scoring_weights.model_dump(),
-            "target_fs": 1.3,
+            "scoring_model_version": "v1.1-explainable-multi-criteria",
+            "weights_configured": ranking_result.scoring_weights.model_dump(),
+            "applied_missing_data_policy": ranking_result.applied_missing_data_policy,
+            "missing_components_detected": ranking_result.missing_components_detected,
+            "normalization_references": ranking_result.normalization_config.model_dump(),
         },
         "parcel_inventory": {
             "total_evaluated": ranking_result.total_parcels_evaluated,
@@ -256,6 +261,7 @@ def export_recommendation_summary_json(
         },
         "top_10_recommendations": top_parcels,
         "provenance_and_integrity": {
+            "dem_verified_source": "NASA SRTM NASADEM Global 1 Arc-Second V001 (NASADEM_HGT_n11e076)",
             "geotechnical_is_illustrative": provenance.geotechnical_is_illustrative,
             "geotechnical_scenario_note": provenance.geotechnical_scenario_note,
             "protected_area_verification_status": provenance.protected_area_verification_status,
@@ -289,6 +295,9 @@ def export_recommendation_report_html(
         sc = p.score_breakdown
         exp = generate_parcel_explanation(p, provenance)
         m = p.metrics
+        base_fs_val = f"{m.get('fs_baseline_mean'):.2f}" if m.get('fs_baseline_mean') is not None else "N/A"
+        gain_val = f"+{m.get('fs_delta_mean'):.2f}" if m.get('fs_delta_mean') is not None else "N/A"
+
         rows_html.append(f"""
         <tr>
             <td style="font-weight: 700; color: #10b981;">#{p.rank}</td>
@@ -296,13 +305,20 @@ def export_recommendation_report_html(
             <td style="font-weight: 700; color: #0284c7;">{sc.priority_score_index:.1f}</td>
             <td>{p.plantable_area_ha:.2f} ha</td>
             <td>{m.get('slope_mean_deg', 0.0):.1f}°</td>
-            <td>{m.get('fs_baseline_mean', 0.0):.2f}</td>
-            <td style="color: #10b981; font-weight: 600;">+{m.get('fs_delta_mean', 0.0):.2f}</td>
+            <td>{base_fs_val}</td>
+            <td style="color: #10b981; font-weight: 600;">{gain_val}</td>
             <td style="font-size: 0.85rem; color: #4b5563;">{exp.primary_ranking_drivers[0] if exp.primary_ranking_drivers else 'N/A'}</td>
         </tr>
         """)
 
     disclosures_html = "".join([f"<li>{d}</li>" for d in provenance.scientific_disclosures])
+    norm = ranking_result.normalization_config
+
+    missing_info = (
+        f"Missing components detected: {', '.join(ranking_result.missing_components_detected)}"
+        if ranking_result.missing_components_detected
+        else "All input layers verified and active."
+    )
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -378,6 +394,14 @@ def export_recommendation_report_html(
             font-size: 0.95rem;
             color: #92400e;
         }}
+        .meta-card {{
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }}
         table {{
             width: 100%;
             border-collapse: collapse;
@@ -421,8 +445,15 @@ def export_recommendation_report_html(
 
         <div class="alert">
             <strong>⚠️ Scientific Integrity & Provenance Disclosure:</strong><br>
-            {provenance.geotechnical_scenario_note}<br>
-            <em>Protected Area Status:</em> {provenance.protected_area_verification_status}
+            • <strong>Verified DEM Source:</strong> NASA SRTM NASADEM Global 1 Arc-Second V001 (NASADEM_HGT_n11e076, SHA256: 680aa3cb46f4b7d148b2d62224ff8f8daa9591dcee5921d46c0f8c4c8a5ca2b6).<br>
+            • <strong>Geotechnical Model:</strong> {provenance.geotechnical_scenario_note}<br>
+            • <em>Protected Area Clearance:</em> {provenance.protected_area_verification_status}
+        </div>
+
+        <div class="meta-card">
+            <strong>⚙️ Prioritization Methodology & Normalization Settings:</strong><br>
+            • <strong>Missing Data Policy:</strong> <code>{ranking_result.applied_missing_data_policy}</code> ({missing_info})<br>
+            • <strong>Configured Normalization Divisors:</strong> Modeled Stability Gain Divisor = <code>{norm.max_delta_fs_ref} ΔFS</code> | Plantable Area Divisor = <code>{norm.max_area_ref_ha} ha</code> | Benchmark FS Target = <code>{norm.fs_target}</code>
         </div>
 
         <div class="stats-grid">

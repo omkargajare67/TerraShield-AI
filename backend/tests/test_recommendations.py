@@ -33,6 +33,8 @@ from backend.app.core.recommendations.eligibility import (
     evaluate_parcel_eligibility,
 )
 from backend.app.core.recommendations.scoring import (
+    MissingDataPolicy,
+    NormalizationConfig,
     ScoringWeights,
     calculate_parcel_score,
 )
@@ -716,3 +718,161 @@ def test_api_species_query(client):
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "PENDING_CURATED_BOTANICAL_DATA"
+
+
+# ==============================================================================
+# 13. PHASE 4 FINAL AUDIT TESTS: NORMALIZATION, MISSING DATA & PROVENANCE
+# ==============================================================================
+
+def test_configurable_stability_gain_normalization():
+    """Verify stability-improvement normalization reference is configurable and deterministic."""
+    m = {"fs_delta_mean": 7.5, "terrain_coverage_pct": 100.0, "ndvi_coverage_pct": 100.0}
+
+    # Default divisor = 15.0 -> 7.5 / 15.0 = 0.50
+    sc_default = calculate_parcel_score(
+        metrics=m, plantable_area_ha=7.5, normalization_config=NormalizationConfig(max_delta_fs_ref=15.0)
+    )
+    assert sc_default.stability_gain_score == 0.50
+
+    # Custom divisor = 25.0 -> 7.5 / 25.0 = 0.30
+    sc_custom = calculate_parcel_score(
+        metrics=m, plantable_area_ha=7.5, normalization_config=NormalizationConfig(max_delta_fs_ref=25.0)
+    )
+    assert sc_custom.stability_gain_score == 0.30
+
+    # Custom divisor = 10.0 -> 7.5 / 10.0 = 0.75
+    sc_low = calculate_parcel_score(
+        metrics=m, plantable_area_ha=7.5, normalization_config=NormalizationConfig(max_delta_fs_ref=10.0)
+    )
+    assert sc_low.stability_gain_score == 0.75
+
+
+def test_missing_ndvi_not_defaulted_to_100():
+    """Verify missing NDVI is not silently converted to 100% coverage."""
+    m_no_ndvi = {
+        "terrain_coverage_pct": 90.0,
+        "ndvi_coverage_pct": None,  # NDVI missing!
+        "fs_baseline_mean": 1.2,
+        "fs_delta_mean": 6.0,
+    }
+    sc = calculate_parcel_score(metrics=m_no_ndvi, plantable_area_ha=5.0)
+
+    # When NDVI is missing, confidence score must reflect terrain coverage (90% = 0.90), NOT (90 + 100)/2 = 0.95!
+    assert sc.data_confidence_score == 0.90
+    assert "ndvi_coverage" in sc.missing_components
+
+
+def test_missing_geotechnical_layers_renormalization_policy():
+    """Verify RENORMALIZE_AVAILABLE policy when geotechnical layers are absent."""
+    m_no_geotech = {
+        "terrain_coverage_pct": 100.0,
+        "ndvi_coverage_pct": 100.0,
+        "fs_baseline_mean": None,  # Geotech missing
+        "fs_delta_mean": None,     # Geotech missing
+    }
+    cfg_weights = ScoringWeights(
+        weight_geotechnical_need=0.35,
+        weight_stability_gain=0.30,
+        weight_plantable_area=0.20,
+        weight_data_confidence=0.15,
+    )
+    sc = calculate_parcel_score(
+        metrics=m_no_geotech,
+        plantable_area_ha=7.5,
+        weights=cfg_weights,
+        missing_data_policy=MissingDataPolicy.RENORMALIZE_AVAILABLE,
+        normalization_config=NormalizationConfig(max_area_ref_ha=15.0),
+    )
+
+    # Missing components must be recorded as None, NOT 0.0
+    assert sc.geotechnical_need_score is None
+    assert sc.stability_gain_score is None
+    assert "geotechnical_need" in sc.missing_components
+    assert "stability_gain" in sc.missing_components
+
+    # Remaining active weights: plantable area (0.20) and confidence (0.15) sum to 0.35
+    # Normalized: 0.20 / 0.35 = 0.5714, 0.15 / 0.35 = 0.4286
+    assert abs(sc.score_weights_active.weight_plantable_area - (0.20 / 0.35)) < 1e-3
+    assert abs(sc.score_weights_active.weight_data_confidence - (0.15 / 0.35)) < 1e-3
+    assert sc.score_weights_active.weight_geotechnical_need == 0.0
+    assert sc.score_weights_active.weight_stability_gain == 0.0
+
+    # Area score = 7.5 / 15.0 = 0.50, Conf score = 1.00
+    expected_composite = (0.20 / 0.35) * 0.50 + (0.15 / 0.35) * 1.00
+    assert abs(sc.composite_score_normalized - expected_composite) < 1e-3
+
+
+def test_missing_geotechnical_layers_zero_fill_and_block():
+    """Verify ZERO_FILL and BLOCK_UNAVAILABLE policies for missing layers."""
+    m_no_geotech = {
+        "terrain_coverage_pct": 100.0,
+        "ndvi_coverage_pct": 100.0,
+        "fs_baseline_mean": None,
+        "fs_delta_mean": None,
+    }
+    cfg_weights = ScoringWeights(
+        weight_geotechnical_need=0.35,
+        weight_stability_gain=0.30,
+        weight_plantable_area=0.20,
+        weight_data_confidence=0.15,
+    )
+
+    # ZERO_FILL keeps original weights and inserts 0.0 for missing
+    sc_zf = calculate_parcel_score(
+        metrics=m_no_geotech,
+        plantable_area_ha=7.5,
+        weights=cfg_weights,
+        missing_data_policy=MissingDataPolicy.ZERO_FILL,
+    )
+    assert sc_zf.score_weights_active.weight_geotechnical_need == 0.35
+    assert sc_zf.composite_score_normalized == round(0.20 * 0.50 + 0.15 * 1.00, 4)
+
+    # BLOCK_UNAVAILABLE sets composite score to 0.0
+    sc_block = calculate_parcel_score(
+        metrics=m_no_geotech,
+        plantable_area_ha=7.5,
+        weights=cfg_weights,
+        missing_data_policy=MissingDataPolicy.BLOCK_UNAVAILABLE,
+    )
+    assert sc_block.priority_score_index == 0.0
+
+
+def test_provenance_reconciled_nasadem_metadata():
+    """Verify provenance metadata explicitly identifies NASA SRTM NASADEM V001 with matching SHA256."""
+    prov = build_recommendation_provenance(run_id="test", timestamp="2026-10-11T12:00:00Z")
+    elev_prov = prov.datasets["elevation"]
+    assert "NASADEM" in elev_prov.source_description
+    assert "NASADEM_HGT_n11e076" in elev_prov.source_description
+    assert any("680aa3cb46f4b7d148b2d62224ff8f8daa9591dcee5921d46c0f8c4c8a5ca2b6" in lim for lim in elev_prov.limitations)
+
+
+def test_api_status_reports_nasadem_source(client):
+    """Verify GET /api/v1/recommendations/status returns verified NASADEM source."""
+    res = client.get("/api/v1/recommendations/status")
+    assert res.status_code == 200
+    data = res.json()
+    assert "dem_verified_source" in data
+    assert "NASADEM_HGT_n11e076" in data["dem_verified_source"]
+    assert "680aa3cb" in data["dem_verified_source"]
+
+
+def test_api_run_with_custom_normalization_and_policy(client):
+    """Verify POST /api/v1/recommendations/run with custom NormalizationConfig and policy."""
+    payload = {
+        "cell_size_m": 1000.0,
+        "normalization_config": {
+            "fs_target": 1.4,
+            "critical_fs": 0.8,
+            "max_delta_fs_ref": 20.0,
+            "max_area_ref_ha": 25.0,
+        },
+        "missing_data_policy": "RENORMALIZE_AVAILABLE",
+    }
+    res = client.post("/api/v1/recommendations/run", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["applied_missing_data_policy"] == "RENORMALIZE_AVAILABLE"
+    assert data["normalization_references"]["max_delta_fs_ref"] == 20.0
+    assert data["normalization_references"]["max_area_ref_ha"] == 25.0
+    assert "NASADEM" in data["dem_source_provenance"]
+

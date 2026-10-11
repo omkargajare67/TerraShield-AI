@@ -18,6 +18,7 @@ class RecommendationStatusResponse(BaseModel):
     native_crs: str
     supported_cell_sizes_m: List[int]
     input_layers: Dict[str, InputLayerStatus]
+    dem_verified_source: str
     geotechnical_scenario_status: str
     protected_area_data_status: str
     species_database_status: str
@@ -55,10 +56,17 @@ class EligibilitySettingsSchema(BaseModel):
 
 
 class ScoringWeightsSchema(BaseModel):
-    weight_geotechnical_need: float = Field(default=0.35, ge=0.0, le=1.0)
-    weight_stability_gain: float = Field(default=0.30, ge=0.0, le=1.0)
-    weight_plantable_area: float = Field(default=0.20, ge=0.0, le=1.0)
-    weight_data_confidence: float = Field(default=0.15, ge=0.0, le=1.0)
+    weight_geotechnical_need: float = Field(default=0.35, ge=0.0)
+    weight_stability_gain: float = Field(default=0.30, ge=0.0)
+    weight_plantable_area: float = Field(default=0.20, ge=0.0)
+    weight_data_confidence: float = Field(default=0.15, ge=0.0)
+
+
+class NormalizationConfigSchema(BaseModel):
+    fs_target: float = Field(default=1.3, ge=1.0, le=3.0)
+    critical_fs: float = Field(default=0.7, ge=0.1, le=1.2)
+    max_delta_fs_ref: float = Field(default=15.0, gt=0.0)
+    max_area_ref_ha: float = Field(default=15.0, gt=0.0)
 
 
 class BudgetConfigSchema(BaseModel):
@@ -73,6 +81,8 @@ class RecommendationRunRequest(BaseModel):
     cell_size_m: float = Field(default=300.0, ge=100.0, le=2000.0)
     eligibility_settings: Optional[EligibilitySettingsSchema] = None
     scoring_weights: Optional[ScoringWeightsSchema] = None
+    normalization_config: Optional[NormalizationConfigSchema] = None
+    missing_data_policy: Optional[str] = Field(default="RENORMALIZE_AVAILABLE")
     budget_config: Optional[BudgetConfigSchema] = None
     user_exclusions_geojson: Optional[Dict[str, Any]] = None
     protected_areas_geojson: Optional[Dict[str, Any]] = None
@@ -103,6 +113,11 @@ class RecommendationRunResponse(BaseModel):
     total_plantable_area_ha: float
     top_recommendations: List[RankedParcelSummary]
     scoring_weights_normalized: Dict[str, float]
+    scoring_weights_active: Dict[str, float]
+    applied_missing_data_policy: str
+    missing_layers_detected: List[str]
+    normalization_references: Dict[str, float]
+    dem_source_provenance: str
     provenance_warning: str
     artifacts: Dict[str, str]
     budget_summary: Optional[Dict[str, Any]] = None
