@@ -18,8 +18,9 @@ def calculate_ndvi_array(
     nir_array: np.ndarray,
     red_nodata: float | None = None,
     nir_nodata: float | None = None,
+    radiometric_offset: float = 0.0,
 ) -> Tuple[np.ndarray, NDVIStats]:
-    """Calculate NDVI = (NIR - Red) / (NIR + Red) with robust zero-denominator handling."""
+    """Calculate NDVI = (NIR - Red) / (NIR + Red) with robust zero-denominator handling and optional offset."""
     if red_array.shape != nir_array.shape:
         raise ValueError(
             f"Band dimension mismatch: Red is {red_array.shape}, but NIR is {nir_array.shape}."
@@ -35,6 +36,12 @@ def calculate_ndvi_array(
         valid_mask &= ~np.isclose(red, red_nodata)
     if nir_nodata is not None and not np.isnan(nir_nodata):
         valid_mask &= ~np.isclose(nir, nir_nodata)
+
+    # Apply radiometric offset (e.g. Sentinel-2 Baseline 04.00+ BOA_ADD_OFFSET = -1000 DN)
+    if radiometric_offset > 0.0:
+        red = red - radiometric_offset
+        nir = nir - radiometric_offset
+        valid_mask &= (red >= 0.0) & (nir >= 0.0)
 
     numerator = nir - red
     denominator = nir + red
@@ -90,7 +97,10 @@ def generate_ndvi_preview(
 
 
 def process_sentinel2_ndvi(
-    red_path: Path, nir_path: Path, cloud_masked: bool = False
+    red_path: Path,
+    nir_path: Path,
+    cloud_masked: bool = False,
+    radiometric_offset: float = 0.0,
 ) -> NDVIResponse:
     """Execute complete NDVI pipeline across input Sentinel-2 Red and NIR band files."""
     red_arr, red_meta = inspect_geotiff(red_path)
@@ -124,7 +134,11 @@ def process_sentinel2_ndvi(
         )
 
     ndvi_arr, stats = calculate_ndvi_array(
-        red_arr, nir_arr, red_meta.nodata_value, nir_meta.nodata_value
+        red_arr,
+        nir_arr,
+        red_meta.nodata_value,
+        nir_meta.nodata_value,
+        radiometric_offset=radiometric_offset,
     )
 
     run_id = uuid.uuid4().hex[:8]

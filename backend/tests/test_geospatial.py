@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.core.config import settings
 from backend.app.core.geospatial.artifacts import get_safe_artifact_path
-from backend.app.core.geospatial.ndvi import calculate_ndvi_array
+from backend.app.core.geospatial.ndvi import calculate_ndvi_array, process_sentinel2_ndvi
 from backend.app.core.geospatial.raster_loader import (
     inspect_geotiff,
     write_geotiff,
@@ -608,4 +608,100 @@ class TestNDVIAlignmentAndValidation:
         with pytest.raises(ValueError) as exc:
             process_sentinel2_ndvi(p_red, p_nir)
         assert "Coordinate Reference System mismatch" in str(exc.value)
+
+
+class TestNDVIRadiometricOffset:
+    """Test radiometric offset handling for Sentinel-2 Baseline 04.00+ products."""
+
+    def test_radiometric_offset_calculation(self):
+        # Uncorrected DN with +1000 offset: Red DN = 1300 (reflectance 0.03), NIR DN = 3700 (reflectance 0.27)
+        red_dn = np.full((4, 4), 1300.0, dtype=np.float32)
+        nir_dn = np.full((4, 4), 3700.0, dtype=np.float32)
+
+        # Without offset: (3700 - 1300) / (3700 + 1300) = 2400 / 5000 = 0.48
+        ndvi_raw, stats_raw = calculate_ndvi_array(red_dn, nir_dn, radiometric_offset=0.0)
+        assert np.isclose(stats_raw.mean_ndvi, 0.48, atol=0.01)
+
+        # With offset = 1000: Red = 300, NIR = 2700 -> (2700 - 300) / (2700 + 300) = 2400 / 3000 = 0.80
+        ndvi_corr, stats_corr = calculate_ndvi_array(red_dn, nir_dn, radiometric_offset=1000.0)
+        assert np.isclose(stats_corr.mean_ndvi, 0.80, atol=0.01)
+
+
+class TestRealWorldWayanadDatasetValidation:
+    """Validation tests across genuine acquired Western Ghats (Wayanad, Kerala) datasets."""
+
+    def test_real_wayanad_dem_integrity_and_processing(self):
+        real_dem_path = Path("data/raw/real/wayanad_dem.tif")
+        if not real_dem_path.exists():
+            pytest.skip("Real Wayanad DEM not downloaded yet.")
+
+        arr, meta = inspect_geotiff(real_dem_path)
+        assert meta.validation_status == "VALID"
+        assert arr.shape == (360, 360)
+        assert meta.bounds["minx"] == 76.0
+        assert meta.bounds["maxy"] == 11.65
+
+        res = process_dem_terrain(real_dem_path)
+        assert res.status == "completed"
+        assert res.elevation.min_elevation == 720.0
+        assert res.elevation.max_elevation == 1306.0
+        assert 750.0 < res.elevation.mean_elevation < 820.0
+        assert res.slope.max_slope_deg > 50.0  # Rugged escarpment slopes
+        assert 0.0 <= res.aspect.mean_aspect_deg <= 360.0
+
+    def test_real_sentinel2_bands_and_ndvi_processing(self):
+        b04_path = Path("data/raw/real/wayanad_b04_red.tif")
+        b08_path = Path("data/raw/real/wayanad_b08_nir.tif")
+        if not b04_path.exists() or not b08_path.exists():
+            pytest.skip("Real Sentinel-2 bands not downloaded yet.")
+
+        _, meta_red = inspect_geotiff(b04_path)
+        _, meta_nir = inspect_geotiff(b08_path)
+        assert meta_red.validation_status == "VALID"
+        assert meta_nir.validation_status == "VALID"
+        assert meta_red.width == meta_nir.width == 1099
+        assert meta_red.height == meta_nir.height == 1099
+
+        res = process_sentinel2_ndvi(b04_path, b08_path)
+        assert res.status == "completed"
+        assert res.ndvi_stats.valid_pixels > 1200000
+        assert -0.2 <= res.ndvi_stats.min_ndvi <= 0.0
+        assert 0.6 <= res.ndvi_stats.max_ndvi <= 1.0
+
+    def test_real_dem_independent_horn_slope_comparison(self):
+        real_dem_path = Path("data/raw/real/wayanad_dem.tif")
+        if not real_dem_path.exists():
+            pytest.skip("Real Wayanad DEM not downloaded yet.")
+
+        from backend.app.core.geospatial.coordinate_systems import get_meters_per_degree
+        arr, meta = inspect_geotiff(real_dem_path)
+        _, mask = compute_elevation_stats(arr, meta.nodata_value)
+        ts_slope, _, _, _ = calculate_slope_and_aspect(arr, meta, mask)
+
+        lat = (meta.bounds["miny"] + meta.bounds["maxy"]) / 2.0
+        scale_x, scale_y = get_meters_per_degree(lat)
+        dx = meta.pixel_size_x * scale_x
+        dy = meta.pixel_size_y * scale_y
+
+        z = arr.astype(np.float64)
+        a, b, c = z[:-2, :-2], z[:-2, 1:-1], z[:-2, 2:]
+        d, f = z[1:-1, :-2], z[1:-1, 2:]
+        g, h, i = z[2:, :-2], z[2:, 1:-1], z[2:, 2:]
+
+        horn_dz_dx = ((c + 2 * f + i) - (a + 2 * d + g)) / (8.0 * dx)
+        horn_dz_dy = ((g + 2 * h + i) - (a + 2 * b + c)) / (8.0 * dy)
+        horn_slope_deg = np.degrees(np.arctan(np.sqrt(horn_dz_dx**2 + horn_dz_dy**2)))
+
+        ts_interior = ts_slope[1:-1, 1:-1]
+        valid_mask = (ts_interior >= 0) & ~np.isnan(ts_interior)
+
+        abs_diff = np.abs(ts_interior[valid_mask] - horn_slope_deg[valid_mask])
+        mae = float(np.mean(abs_diff))
+        within_2 = float(np.mean(abs_diff <= 2.0) * 100.0)
+
+        # Mean absolute difference between central difference and Horn's formula is < 0.6 degrees
+        assert mae < 0.6
+        # Over 98% of cells agree within 2.0 degrees
+        assert within_2 > 98.0
+
 

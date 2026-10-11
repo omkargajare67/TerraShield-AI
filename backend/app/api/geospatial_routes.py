@@ -121,12 +121,18 @@ async def compute_ndvi(
     red_file: UploadFile = File(...),
     nir_file: UploadFile = File(...),
     cloud_masked: bool = Form(default=False),
+    radiometric_offset: float = Form(default=0.0),
 ) -> NDVIResponse:
     """Upload Sentinel-2 Red (B04) and NIR (B08) GeoTIFF bands to calculate NDVI."""
     red_path = save_upload_safely(red_file, settings.ALLOWED_RASTER_EXTENSIONS)
     nir_path = save_upload_safely(nir_file, settings.ALLOWED_RASTER_EXTENSIONS)
     try:
-        return process_sentinel2_ndvi(red_path, nir_path, cloud_masked=cloud_masked)
+        return process_sentinel2_ndvi(
+            red_path,
+            nir_path,
+            cloud_masked=cloud_masked,
+            radiometric_offset=radiometric_offset,
+        )
     except Exception as err:
         red_path.unlink(missing_ok=True)
         nir_path.unlink(missing_ok=True)
