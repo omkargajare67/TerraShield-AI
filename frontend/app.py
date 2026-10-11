@@ -29,6 +29,7 @@ from frontend.components.terrain_view import (
     render_ndvi_section,
     render_soil_and_vector_section,
 )
+from frontend.components.geotechnical_view import render_geotechnical_tab
 
 # Backend API Configuration
 DEFAULT_API_URL = "http://127.0.0.1:8000"
@@ -269,10 +270,11 @@ def main():
         )
 
     # Main Tabs Layout
-    tab_map, tab_results, tab_dem, tab_ndvi, tab_env, tab_study = st.tabs(
+    tab_map, tab_results, tab_geotech, tab_dem, tab_ndvi, tab_env, tab_study = st.tabs(
         [
             "🗺️ Interactive Map",
             "📊 Analysis Dashboard",
+            "📐 Geotechnical Intelligence",
             "🏔️ DEM & Terrain",
             "🌿 Sentinel-2 NDVI",
             "🛡️ Environmental Constraints",
@@ -337,7 +339,11 @@ def main():
                 "in the sidebar to calculate deterministic leverage scores and parcel rankings."
             )
 
-    # Tab 3: DEM & Terrain Analysis (Phase 2)
+    # Tab 3: Geotechnical Intelligence Engine (Phase 3)
+    with tab_geotech:
+        render_geotechnical_tab(API_BASE_URL)
+
+    # Tab 4: DEM & Terrain Analysis (Phase 2)
     with tab_dem:
         render_dem_section(API_BASE_URL)
 
