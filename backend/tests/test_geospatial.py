@@ -335,6 +335,51 @@ class TestGeospatialAPIEndpoints:
         # Cleanup
         test_artifact.unlink(missing_ok=True)
 
+    def test_inspect_dem_unsupported_extension_returns_400(self):
+        """API rejects non-TIFF files with 400 Bad Request."""
+        resp = client.post(
+            "/api/v1/geospatial/dem/inspect",
+            files={"file": ("invalid.txt", b"not a tiff", "text/plain")},
+        )
+        assert resp.status_code == 400
+        assert "Unsupported file extension" in resp.json()["detail"]
+
+    def test_terrain_analysis_corrupted_file_returns_400(self):
+        """API rejects corrupted TIFF bytes with 400 Bad Request."""
+        resp = client.post(
+            "/api/v1/geospatial/dem/terrain",
+            files={"file": ("corrupted.tif", b"corrupted bytes", "image/tiff")},
+        )
+        assert resp.status_code == 400
+        assert "Failed to decode GeoTIFF" in resp.json()["detail"]
+
+    def test_ndvi_endpoint_mismatched_dimensions_returns_400(self, synthetic_flat_dem: Path, tmp_path: Path):
+        """API rejects NDVI computation when Red and NIR dimensions differ."""
+        # Create a smaller NIR array (5x5) vs flat DEM (10x10)
+        small_nir = tmp_path / "small_nir.tif"
+        write_geotiff(
+            small_nir,
+            np.ones((5, 5), dtype=np.float32),
+            {"minx": 500000.0, "miny": 5000000.0, "maxx": 500050.0, "maxy": 5000050.0},
+            10.0,
+            10.0,
+        )
+        with open(synthetic_flat_dem, "rb") as f_red, open(small_nir, "rb") as f_nir:
+            resp = client.post(
+                "/api/v1/geospatial/ndvi",
+                files={
+                    "red_file": ("red.tif", f_red, "image/tiff"),
+                    "nir_file": ("nir.tif", f_nir, "image/tiff"),
+                },
+            )
+        assert resp.status_code == 400
+        assert "identical pixel dimensions" in resp.json()["detail"]
+
+    def test_nonexistent_artifact_returns_404(self):
+        """Requesting a non-existent artifact returns 404 Not Found."""
+        resp = client.get("/api/v1/geospatial/artifacts/definitely_not_here.tif")
+        assert resp.status_code == 404
+
 
 class TestPhase1Integrity:
     """Verify Phase 1 endpoints still function with 100% integrity."""
