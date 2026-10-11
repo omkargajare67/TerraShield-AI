@@ -5,8 +5,8 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-forestgreen.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.38+-FF4B4B.svg)](https://streamlit.io/)
-[![Phase](https://img.shields.io/badge/Phase-3%20of%205%20(Geotechnical%20Intelligence%20Engine)-blue.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-85%20Passing-brightgreen.svg)]()
+[![Phase](https://img.shields.io/badge/Phase-4%20of%205%20(Spatial%20Recommendation%20Engine)-blue.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-121%20Passing-brightgreen.svg)]()
 
 ---
 
@@ -74,6 +74,18 @@ To avoid confusion between test mocks and ground-truth observations, TerraShield
 - **Real Wayanad Raster Stability Engine:** Executes per-pixel geotechnical stability modeling on `wayanad_slope.tif` (129,600 valid pixels in native `EPSG:4326 WGS 84` with measured mean slope of $9.49^\circ$).
 
 ---
+
+## 5. Phase 4 Capabilities: Spatial Recommendation Engine
+
+- **Candidate Parcel Generation:** Discretizes the pilot study area into candidate planning cells ($100\text{ m} - 1,000\text{ m}$, default $300\text{ m}$) using WGS 84 ellipsoidal curvatures ($M, N$).
+- **Geodesic Area Calculation:** Computes metric polygon parcel area in hectares via localized ellipsoidal Shoelace projection without degree multiplication ($1\text{ ha} = 10,000\text{ m}^2$).
+- **Multi-Resolution Zonal Statistics:** Aggregates terrain (30m DEM), topographic slope/aspect, geotechnical stability ($FS_{\text{base}}, FS_{\text{reinf}}, \Delta FS$), and Sentinel-2 NDVI (10m) without lossy resampling.
+- **Rule-Based Eligibility & Exclusions:** Enforces strict physical (slope $>45^\circ$), administrative (statutory reserves), and environmental (canopy proxy) disqualifications.
+- **Explainable Multi-Criteria Prioritization:** Evaluates eligible candidate parcels using normalized, weighted scoring components ($S_{\text{need}}, S_{\text{gain}}, S_{\text{area}}, S_{\text{conf}}$) with transparent 0–100 Priority Index rankings.
+- **Scientific Leverage Safeguards:** Distinguishes mechanistic stability change ($\Delta FS$) from empirical disaster risk reduction ($\Delta R$). Evaluates modeled stability gain per stem ($\Delta FS / N$) only when calibrated stem density exists; otherwise marks as `UNAVAILABLE`.
+- **Traceable Provenance & Disclosures:** Propagates exploratory scenario limitations, unverified protected-area statuses, and native species data availability.
+- **Multi-Format Exports:** Exports RFC 7946 GeoJSON parcels, CSV zonal metrics, CSV rankings, JSON run summaries, and self-contained HTML audit reports.
+- **Streamlit Dashboard Integration:** Features interactive parcel mapping, KPI summary cards, candidate parcel inspector with factor breakdowns, and direct download links.
 
 ## 5. Architecture & Folder Structure
 

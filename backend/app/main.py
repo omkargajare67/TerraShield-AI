@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.api.geospatial_routes import router as geospatial_router
 from backend.app.api.geotechnical_routes import router as geotechnical_router
+from backend.app.api.recommendation_routes import router as recommendation_router
 from backend.app.api.routes import router as api_router
 from backend.app.core.config import settings
 from backend.app.schemas.health import HealthResponse
@@ -53,6 +54,7 @@ async def health_check() -> HealthResponse:
 app.include_router(api_router, prefix=settings.API_V1_STR, tags=["Analysis & Parcels"])
 app.include_router(geospatial_router, prefix=settings.API_V1_STR, tags=["Geospatial Engine"])
 app.include_router(geotechnical_router, prefix=settings.API_V1_STR, tags=["Geotechnical Intelligence"])
+app.include_router(recommendation_router, prefix=settings.API_V1_STR, tags=["Spatial Recommendations"])
 
 
 if __name__ == "__main__":
