@@ -222,3 +222,121 @@ def write_geotiff(
     out_arr = array.astype(np.float32)
     tifffile.imwrite(str(output_path), out_arr, extratags=extratags)
     return output_path
+
+
+def validate_and_inspect_uploaded_raster(
+    file_path: Path, expected_layer_type: str = "dem"
+) -> Dict[str, Any]:
+    """Validate an uploaded raster layer against expected scientific criteria.
+    
+    Checks:
+    - GeoTIFF georeferencing and CRS
+    - Spatial dimensions and resolution
+    - NoData proportion
+    - Physical value ranges (e.g. DEM elevations, NDVI values)
+    """
+    arr, meta = inspect_geotiff(file_path)
+    valid_mask = arr != meta.nodata_value if meta.nodata_value is not None else ~np.isnan(arr)
+    valid_pixels = arr[valid_mask]
+
+    warnings = list(meta.validation_messages)
+    errors = []
+
+    if valid_pixels.size == 0:
+        errors.append("Raster contains zero valid data pixels.")
+        return {
+            "is_valid": False,
+            "errors": errors,
+            "warnings": warnings,
+            "metadata": meta.model_dump(),
+        }
+
+    min_val = float(np.min(valid_pixels))
+    max_val = float(np.max(valid_pixels))
+    mean_val = float(np.mean(valid_pixels))
+
+    # Scientific value checks by layer type
+    if expected_layer_type.lower() == "dem":
+        if min_val < -500.0 or max_val > 9000.0:
+            warnings.append(
+                f"DEM elevation range [{min_val:.1f} m, {max_val:.1f} m] extends outside typical terrestrial topography."
+            )
+        if meta.height < 5 or meta.width < 5:
+            errors.append(f"DEM resolution too low ({meta.width}x{meta.height}) for meaningful slope analysis.")
+    elif expected_layer_type.lower() == "ndvi":
+        if min_val < -1.1 or max_val > 1.1:
+            warnings.append(
+                f"NDVI range [{min_val:.2f}, {max_val:.2f}] extends outside standard theoretical range [-1.0, 1.0]."
+            )
+    elif expected_layer_type.lower() in ("red", "nir"):
+        if min_val < 0.0:
+            warnings.append(f"Spectral reflectance band contains negative values ({min_val:.2f}).")
+
+    valid_pct = (valid_pixels.size / arr.size) * 100.0
+    if valid_pct < 20.0:
+        warnings.append(f"Low valid data coverage: only {valid_pct:.1f}% of pixels contain data.")
+
+    return {
+        "is_valid": len(errors) == 0,
+        "errors": errors,
+        "warnings": warnings,
+        "layer_type": expected_layer_type,
+        "width": meta.width,
+        "height": meta.height,
+        "pixel_size_x": meta.pixel_size_x,
+        "pixel_size_y": meta.pixel_size_y,
+        "bounds": meta.bounds,
+        "crs": meta.crs,
+        "min_value": round(min_val, 3),
+        "max_value": round(max_val, 3),
+        "mean_value": round(mean_val, 3),
+        "valid_percent": round(valid_pct, 1),
+        "nodata_value": meta.nodata_value,
+        "metadata": meta.model_dump(),
+    }
+
+
+def align_and_resample_raster(
+    source_path: Path, reference_path: Path, output_path: Path
+) -> Path:
+    """Align and resample a source raster to precisely match a reference raster grid.
+    
+    Uses bilinear interpolation to match the reference raster dimensions and bounds.
+    """
+    src_arr, src_meta = inspect_geotiff(source_path)
+    ref_arr, ref_meta = inspect_geotiff(reference_path)
+
+    if src_meta.width == ref_meta.width and src_meta.height == ref_meta.height:
+        # Already same dimensions, write copy
+        return write_geotiff(
+            output_path=output_path,
+            array=src_arr,
+            bounds=ref_meta.bounds,
+            pixel_size_x=ref_meta.pixel_size_x,
+            pixel_size_y=ref_meta.pixel_size_y,
+            nodata_value=src_meta.nodata_value or -9999.0,
+            crs_str=ref_meta.crs or src_meta.crs or "EPSG:4326",
+        )
+
+    # Resample using scipy ndimage zoom
+    from scipy.ndimage import zoom
+    zoom_y = ref_meta.height / float(src_meta.height)
+    zoom_x = ref_meta.width / float(src_meta.width)
+    resampled = zoom(src_arr.astype(np.float32), (zoom_y, zoom_x), order=1)
+
+    # Crop or pad to exact dimensions if float rounding occurs
+    target_arr = np.full((ref_meta.height, ref_meta.width), src_meta.nodata_value or -9999.0, dtype=np.float32)
+    h_use = min(ref_meta.height, resampled.shape[0])
+    w_use = min(ref_meta.width, resampled.shape[1])
+    target_arr[:h_use, :w_use] = resampled[:h_use, :w_use]
+
+    return write_geotiff(
+        output_path=output_path,
+        array=target_arr,
+        bounds=ref_meta.bounds,
+        pixel_size_x=ref_meta.pixel_size_x,
+        pixel_size_y=ref_meta.pixel_size_y,
+        nodata_value=src_meta.nodata_value or -9999.0,
+        crs_str=ref_meta.crs or "EPSG:4326",
+    )
+

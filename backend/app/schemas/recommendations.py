@@ -82,7 +82,7 @@ class BudgetConfigSchema(BaseModel):
 
 
 class RecommendationRunRequest(BaseModel):
-    cell_size_m: float = Field(default=300.0, ge=100.0, le=2000.0)
+    cell_size_m: float = Field(default=300.0, ge=50.0, le=2000.0)
     eligibility_settings: Optional[EligibilitySettingsSchema] = None
     scoring_weights: Optional[ScoringWeightsSchema] = None
     normalization_config: Optional[NormalizationConfigSchema] = None
@@ -91,6 +91,12 @@ class RecommendationRunRequest(BaseModel):
     user_exclusions_geojson: Optional[Dict[str, Any]] = None
     protected_areas_geojson: Optional[Dict[str, Any]] = None
     fs_target: float = Field(default=1.3, ge=1.0, le=3.0)
+    project_id: Optional[str] = None
+    study_area_bounds: Optional[Dict[str, float]] = None
+    study_area_geojson: Optional[Dict[str, Any]] = None
+    custom_layers: Optional[Dict[str, str]] = None
+    geotechnical_parameters: Optional[Dict[str, Any]] = None
+
 
 
 class RankedParcelSummary(BaseModel):

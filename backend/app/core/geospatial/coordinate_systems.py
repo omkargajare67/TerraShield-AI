@@ -48,3 +48,37 @@ def project_latlon_to_utm(
     """Convert WGS84 geographic coordinate to local UTM projection (easting, northing, zone, letter)."""
     easting, northing, zone_number, zone_letter = utm.from_latlon(latitude, longitude)
     return easting, northing, zone_number, zone_letter
+
+
+def project_utm_to_latlon(
+    easting: float, northing: float, zone_number: int, northern: bool = True
+) -> Tuple[float, float]:
+    """Convert UTM projected coordinate to WGS84 geographic coordinate (longitude, latitude)."""
+    lat, lon = utm.to_latlon(easting, northing, zone_number, northern=northern)
+    return lon, lat
+
+
+def project_webmercator_to_latlon(x: float, y: float) -> Tuple[float, float]:
+    """Convert EPSG:3857 Web Mercator coordinate in meters to WGS84 geographic (longitude, latitude)."""
+    lon = (x / 6378137.0) * (180.0 / math.pi)
+    lat = (2.0 * math.atan(math.exp(y / 6378137.0)) - (math.pi / 2.0)) * (180.0 / math.pi)
+    return lon, lat
+
+
+def detect_and_normalize_crs(crs_string: Optional[str]) -> Tuple[str, bool]:
+    """Inspect CRS identifier, returning standardized name and whether it is EPSG:4326.
+    
+    Returns:
+        (normalized_crs_name, is_epsg_4326)
+    """
+    if not crs_string:
+        return "UNKNOWN", False
+    norm = crs_string.strip().upper()
+    if "4326" in norm or norm in ("WGS84", "WGS 84", "OGC:CRS84", "CRS84", "EPSG:4326"):
+        return "EPSG:4326 (WGS 84)", True
+    if "3857" in norm or "900913" in norm:
+        return "EPSG:3857 (Web Mercator)", False
+    if "UTM" in norm or "326" in norm or "327" in norm:
+        return norm, False
+    return norm, False
+

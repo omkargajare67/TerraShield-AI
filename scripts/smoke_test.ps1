@@ -85,7 +85,14 @@ assert resp_rec_status.status_code == 200
 data_rec = resp_rec_status.json()
 print(f"  [OK] Recommendation engine status: {data_rec['status']}, DEM: {data_rec['dem_verified_source'][:30]}...")
 
-# 5. Frontend Components Importability
+# 5. Project Workspace API
+resp_projects = client.get("/api/v1/projects")
+assert resp_projects.status_code == 200
+projects = resp_projects.json()
+assert len(projects) >= 2
+print(f"  [OK] Project workspaces operational: {len(projects)} projects available ({[p['id'] for p in projects]}).")
+
+# 6. Frontend Components Importability
 from frontend.components.map_view import create_parcels_map
 from frontend.components.metrics_view import build_analysis_dataframe
 from backend.app.core.demo_data import load_demo_geojson
@@ -95,6 +102,7 @@ assert m is not None
 print("  [OK] Frontend folium map and dataframe builder functional.")
 
 print("\n[ALL SMOKE CHECKS PASSED SUCCESSFULLY]")
+
 "@
 
 $TempSmokeFile = Join-Path $ProjectRoot "scripts\_temp_smoke_check.py"

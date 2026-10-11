@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.api.geospatial_routes import router as geospatial_router
 from backend.app.api.geotechnical_routes import router as geotechnical_router
+from backend.app.api.project_routes import router as project_router
 from backend.app.api.recommendation_routes import router as recommendation_router
 from backend.app.api.routes import router as api_router
 from backend.app.core.config import settings
@@ -55,6 +56,8 @@ app.include_router(api_router, prefix=settings.API_V1_STR, tags=["Analysis & Par
 app.include_router(geospatial_router, prefix=settings.API_V1_STR, tags=["Geospatial Engine"])
 app.include_router(geotechnical_router, prefix=settings.API_V1_STR, tags=["Geotechnical Intelligence"])
 app.include_router(recommendation_router, prefix=settings.API_V1_STR, tags=["Spatial Recommendations"])
+app.include_router(project_router, prefix=settings.API_V1_STR, tags=["Project Workspaces"])
+
 
 
 if __name__ == "__main__":

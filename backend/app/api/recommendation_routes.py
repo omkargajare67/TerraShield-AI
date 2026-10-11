@@ -216,22 +216,70 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
     run_id = uuid.uuid4().hex[:8]
     timestamp = datetime.now(timezone.utc).isoformat()
 
+    # Resolve project if specified
+    from backend.app.core.projects.project_service import ProjectService
+    proj = ProjectService.get_project(req.project_id) if req.project_id else None
+
+    # Resolve layers: project overrides > custom layers > default Wayanad
     layers = _get_active_layer_paths()
+    if proj:
+        for k in ["dem", "slope", "aspect", "ndvi", "fs_baseline", "fs_reinforced", "fs_delta", "required_cohesion", "tree_density"]:
+            if k in proj.layers and proj.layers[k].get("path"):
+                p_cand = Path(proj.layers[k]["path"])
+                if p_cand.exists():
+                    layers[k] = p_cand
+    if req.custom_layers:
+        for k, v in req.custom_layers.items():
+            if v and Path(v).exists():
+                layers[k] = Path(v)
+
     if not layers["slope"].exists():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Required Wayanad slope raster not found. Run Phase 2 geospatial engine first.",
+            detail=(
+                "Required slope raster not found. Please run terrain analysis or ensure "
+                "the project's slope raster has been generated."
+            ),
         )
 
-    # 1. Generate candidate parcels
-    # Wayanad pilot extent
+    # 1. Resolve study area bounds
+    if req.study_area_bounds:
+        minx = float(req.study_area_bounds.get("minx", req.study_area_bounds.get("min_lon", 76.00)))
+        miny = float(req.study_area_bounds.get("miny", req.study_area_bounds.get("min_lat", 11.55)))
+        maxx = float(req.study_area_bounds.get("maxx", req.study_area_bounds.get("max_lon", 76.10)))
+        maxy = float(req.study_area_bounds.get("maxy", req.study_area_bounds.get("max_lat", 11.65)))
+    elif proj:
+        minx = float(proj.bounds.get("minx", 76.00))
+        miny = float(proj.bounds.get("miny", 11.55))
+        maxx = float(proj.bounds.get("maxx", 76.10))
+        maxy = float(proj.bounds.get("maxy", 11.65))
+    else:
+        minx, miny, maxx, maxy = 76.00, 11.55, 76.10, 11.65
+
+    # Generate candidate parcels across bounds
     parcels = generate_candidate_parcels(
-        min_lon=76.00,
-        min_lat=11.55,
-        max_lon=76.10,
-        max_lat=11.65,
+        min_lon=minx,
+        min_lat=miny,
+        max_lon=maxx,
+        max_lat=maxy,
         cell_size_m=req.cell_size_m,
     )
+
+    # Filter by study area polygon if available
+    boundary_geo = req.study_area_geojson or (proj.boundary_geojson if proj else None)
+    if boundary_geo:
+        try:
+            from shapely.ops import unary_union
+            feats = boundary_geo.get("features", [])
+            if feats:
+                geoms = [shape(f["geometry"]) for f in feats if f.get("geometry")]
+                if geoms:
+                    boundary_poly = unary_union(geoms)
+                    filtered = [p for p in parcels if shape(p.geometry).intersects(boundary_poly)]
+                    if filtered:
+                        parcels = filtered
+        except Exception:
+            pass
 
     # 2. Open raster contexts
     dem_ctx = RasterLayerContext(layers["dem"]) if layers["dem"].exists() else None
@@ -246,6 +294,7 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
 
     # 3. Configure eligibility engine
     el_cfg_in = req.eligibility_settings
+
     elig_config = EligibilityConfig(
         min_terrain_coverage_pct=el_cfg_in.min_terrain_coverage_pct if el_cfg_in else 80.0,
         max_slope_deg=el_cfg_in.max_slope_deg if el_cfg_in else 45.0,
@@ -424,6 +473,26 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
         else ranking_result.scoring_weights.model_dump()
     )
 
+    if proj:
+        proj.latest_run_id = run_id
+        proj.saved_runs.append({
+            "run_id": run_id,
+            "timestamp": timestamp,
+            "cell_size_m": req.cell_size_m,
+            "total_parcels": ranking_result.total_parcels_evaluated,
+            "eligible_count": ranking_result.eligible_count,
+            "excluded_count": ranking_result.excluded_count,
+            "total_plantable_area_ha": round(tot_plantable, 2),
+            "artifacts": artifacts,
+        })
+        ProjectService.update_project(proj)
+
+    prov_dem_str = (
+        "NASA SRTM NASADEM Global 1 Arc-Second V001 (NASADEM_HGT_n11e076)"
+        if (proj is None or proj.id == "wayanad_pilot")
+        else f"Project '{proj.name}' ({proj.study_area_type})"
+    )
+
     return RecommendationRunResponse(
         run_id=run_id,
         timestamp=timestamp,
@@ -442,11 +511,12 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
         differentiating_components=ranking_result.differentiating_components,
         constant_components=ranking_result.constant_components,
         normalization_references=norm_cfg.model_dump(),
-        dem_source_provenance="NASA SRTM NASADEM Global 1 Arc-Second V001 (NASADEM_HGT_n11e076)",
+        dem_source_provenance=prov_dem_str,
         provenance_warning=provenance.geotechnical_scenario_note,
         artifacts=artifacts,
         budget_summary=budget_res,
     )
+
 
 
 @router.get(
