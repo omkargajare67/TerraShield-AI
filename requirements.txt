@@ -1,0 +1,22 @@
+# TerraShield AI - Phase 1 Dependencies
+# Core Backend
+fastapi>=0.115.0
+uvicorn>=0.30.0
+pydantic>=2.8.0
+
+# Frontend & Mapping
+streamlit>=1.38.0
+folium>=0.17.0
+streamlit-folium>=0.22.0
+
+# Data & Numerical Processing
+numpy>=1.26.0
+pandas>=2.2.0
+
+# HTTP & Utilities
+requests>=2.32.0
+httpx>=0.27.0
+python-multipart>=0.0.9
+
+# Testing
+pytest>=8.3.0

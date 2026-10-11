@@ -1,0 +1,154 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "dataset_name": "TerraShield AI Phase 1 Demonstration Parcels",
+    "study_area": "Cascade Foothills Demonstration Basin (Synthetic)",
+    "data_type": "Synthetic / Illustrative Sample Data",
+    "is_synthetic": true,
+    "provenance": "Generated deterministically for TerraShield AI Phase 1 demonstration and automated test verification.",
+    "warning": "Phase 1 demonstration: sample geometries and attributes are illustrative and are not verified environmental observations. Results are not validated geotechnical predictions or planting prescriptions.",
+    "crs": "EPSG:4326"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "PARCEL-001",
+      "properties": {
+        "parcel_id": "PARCEL-001",
+        "name": "North Ridge Slope",
+        "description": "Steep degraded hillside near access road; high modeled stabilization payoff.",
+        "area_hectares": 2.4,
+        "demo_baseline_risk": 0.82,
+        "demo_delta_risk": 0.35,
+        "demo_tree_count": 500,
+        "is_excluded": false,
+        "exclusion_reason": null,
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-121.785, 47.452],
+            [-121.780, 47.452],
+            [-121.780, 47.457],
+            [-121.786, 47.456],
+            [-121.785, 47.452]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "PARCEL-002",
+      "properties": {
+        "parcel_id": "PARCEL-002",
+        "name": "Riparian Buffer East",
+        "description": "Gently sloping riparian strip subject to seasonal sediment runoff.",
+        "area_hectares": 3.8,
+        "demo_baseline_risk": 0.65,
+        "demo_delta_risk": 0.20,
+        "demo_tree_count": 800,
+        "is_excluded": false,
+        "exclusion_reason": null,
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-121.775, 47.448],
+            [-121.768, 47.449],
+            [-121.770, 47.454],
+            [-121.777, 47.453],
+            [-121.775, 47.448]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "PARCEL-003",
+      "properties": {
+        "parcel_id": "PARCEL-003",
+        "name": "Upper Escarpment Reserve",
+        "description": "High slope instability inside simulated statutory ecological reserve boundary.",
+        "area_hectares": 5.1,
+        "demo_baseline_risk": 0.90,
+        "demo_delta_risk": 0.40,
+        "demo_tree_count": 1200,
+        "is_excluded": true,
+        "exclusion_reason": "Protected wilderness reserve (simulated legal exclusion boundary; commercial or active intervention prohibited).",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-121.795, 47.460],
+            [-121.788, 47.461],
+            [-121.789, 47.466],
+            [-121.796, 47.465],
+            [-121.795, 47.460]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "PARCEL-004",
+      "properties": {
+        "parcel_id": "PARCEL-004",
+        "name": "South Gully Convergence",
+        "description": "Active convergence channel with severe bank erosion; compact planting footprint.",
+        "area_hectares": 1.6,
+        "demo_baseline_risk": 0.74,
+        "demo_delta_risk": 0.28,
+        "demo_tree_count": 350,
+        "is_excluded": false,
+        "exclusion_reason": null,
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-121.782, 47.442],
+            [-121.777, 47.443],
+            [-121.778, 47.447],
+            [-121.784, 47.446],
+            [-121.782, 47.442]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "PARCEL-005",
+      "properties": {
+        "parcel_id": "PARCEL-005",
+        "name": "Bedrock Outcrop Spur",
+        "description": "Exposed rocky ridge with negligible soil mantle; zero plantable capacity.",
+        "area_hectares": 1.2,
+        "demo_baseline_risk": 0.45,
+        "demo_delta_risk": 0.05,
+        "demo_tree_count": 0,
+        "is_excluded": true,
+        "exclusion_reason": "Zero plantable soil depth (simulated rocky outcrop constraint; 0 plantable tree capacity).",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-121.790, 47.448],
+            [-121.786, 47.449],
+            [-121.787, 47.452],
+            [-121.791, 47.451],
+            [-121.790, 47.448]
+          ]
+        ]
+      }
+    }
+  ]
+}
