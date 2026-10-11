@@ -24,6 +24,11 @@ from frontend.components.metrics_view import (
     render_metrics_cards,
     render_parcels_table,
 )
+from frontend.components.terrain_view import (
+    render_dem_section,
+    render_ndvi_section,
+    render_soil_and_vector_section,
+)
 
 # Backend API Configuration
 DEFAULT_API_URL = "http://127.0.0.1:8000"
@@ -264,7 +269,16 @@ def main():
         )
 
     # Main Tabs Layout
-    tab_map, tab_results, tab_study = st.tabs(["🗺️ Interactive Map", "📊 Analysis Dashboard", "📍 Study Area Details"])
+    tab_map, tab_results, tab_dem, tab_ndvi, tab_env, tab_study = st.tabs(
+        [
+            "🗺️ Interactive Map",
+            "📊 Analysis Dashboard",
+            "🏔️ DEM & Terrain",
+            "🌿 Sentinel-2 NDVI",
+            "🛡️ Environmental Constraints",
+            "📍 Study Area Details",
+        ]
+    )
 
     # Tab 1: Interactive Map
     with tab_map:
@@ -323,7 +337,19 @@ def main():
                 "in the sidebar to calculate deterministic leverage scores and parcel rankings."
             )
 
-    # Tab 3: Study Area Details
+    # Tab 3: DEM & Terrain Analysis (Phase 2)
+    with tab_dem:
+        render_dem_section(API_BASE_URL)
+
+    # Tab 4: Sentinel-2 NDVI Analysis (Phase 2)
+    with tab_ndvi:
+        render_ndvi_section(API_BASE_URL)
+
+    # Tab 5: Environmental Constraints & Soil (Phase 2)
+    with tab_env:
+        render_soil_and_vector_section(API_BASE_URL)
+
+    # Tab 6: Study Area Details
     with tab_study:
         st.markdown("### Study Area Provenance & Synthetic Metadata")
         st.markdown(

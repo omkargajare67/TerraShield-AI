@@ -49,3 +49,16 @@ htmlcov/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Geospatial data uploads and large binary rasters (Phase 2)
+data/raw/
+data/uploads/
+data/processed/
+data/artifacts/
+*.gpkg
+*.tar.gz
+*.zip
+*.tif
+*.tiff
+!data/sample/*.tif
+!data/sample/*.tiff

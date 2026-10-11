@@ -70,3 +70,15 @@ def test_build_dataframe_from_parcels():
     assert df.iloc[1]["Priority Rank"] == "Excluded"
     assert df.iloc[0]["Status"] == "Eligible"
     assert df.iloc[1]["Status"] == "Excluded"
+
+
+def test_terrain_view_components_importable():
+    from frontend.components.terrain_view import (
+        render_dem_section,
+        render_ndvi_section,
+        render_soil_and_vector_section,
+    )
+    assert callable(render_dem_section)
+    assert callable(render_ndvi_section)
+    assert callable(render_soil_and_vector_section)
+

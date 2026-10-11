@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.app.api.geospatial_routes import router as geospatial_router
 from backend.app.api.routes import router as api_router
 from backend.app.core.config import settings
 from backend.app.schemas.health import HealthResponse
@@ -47,8 +48,9 @@ async def health_check() -> HealthResponse:
     )
 
 
-# Include API v1 router
+# Include API routers
 app.include_router(api_router, prefix=settings.API_V1_STR, tags=["Analysis & Parcels"])
+app.include_router(geospatial_router, prefix=settings.API_V1_STR, tags=["Geospatial Engine"])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,33 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "dataset_name": "TerraShield AI Sample Protected Areas Layer",
+    "source": "Synthetic WDPA Test Fixture",
+    "is_synthetic": true,
+    "warning": "Illustrative vector boundary for testing statutory parcel intersections in Phase 2."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "WDPA-SYNTH-01",
+      "properties": {
+        "name": "Cascade Ecological Wilderness Reserve",
+        "designation": "Strict Nature Reserve (IUCN Ia)",
+        "governance": "Federal Statutory Protection",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-121.800, 47.458],
+            [-121.786, 47.458],
+            [-121.786, 47.470],
+            [-121.800, 47.470],
+            [-121.800, 47.458]
+          ]
+        ]
+      }
+    }
+  ]
+}
