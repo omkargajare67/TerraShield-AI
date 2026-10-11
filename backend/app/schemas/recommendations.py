@@ -65,7 +65,11 @@ class ScoringWeightsSchema(BaseModel):
 class NormalizationConfigSchema(BaseModel):
     fs_target: float = Field(default=1.3, ge=1.0, le=3.0)
     critical_fs: float = Field(default=0.7, ge=0.1, le=1.2)
-    max_delta_fs_ref: float = Field(default=15.0, gt=0.0)
+    max_delta_fs_ref: float = Field(
+        default=15.0,
+        gt=0.0,
+        description="Configurable normalization reference divisor for modeled stability improvement (delta FS), not a validated engineering threshold",
+    )
     max_area_ref_ha: float = Field(default=15.0, gt=0.0)
 
 
@@ -90,7 +94,7 @@ class RecommendationRunRequest(BaseModel):
 
 
 class RankedParcelSummary(BaseModel):
-    rank: int
+    rank: Optional[int] = None
     parcel_id: str
     priority_score_index: float
     plantable_area_ha: float
@@ -116,6 +120,10 @@ class RecommendationRunResponse(BaseModel):
     scoring_weights_active: Dict[str, float]
     applied_missing_data_policy: str
     missing_layers_detected: List[str]
+    is_discriminative: bool = True
+    differentiation_warning: Optional[str] = None
+    differentiating_components: List[str] = Field(default_factory=list)
+    constant_components: List[str] = Field(default_factory=list)
     normalization_references: Dict[str, float]
     dem_source_provenance: str
     provenance_warning: str

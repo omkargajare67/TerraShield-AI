@@ -16,6 +16,7 @@ class ParcelExplanation(BaseModel):
     exclusion_details: List[str]
     score_component_contributions: Dict[str, Optional[float]]
     primary_ranking_drivers: List[str]
+    non_differentiating_contributors: List[str] = Field(default_factory=list)
     topographic_context: str
     geotechnical_context: str
     vegetation_context: str
@@ -26,6 +27,7 @@ class ParcelExplanation(BaseModel):
 def generate_parcel_explanation(
     parcel: EvaluatedParcel,
     provenance: Optional[RecommendationProvenance] = None,
+    differentiating_components: Optional[List[str]] = None,
 ) -> ParcelExplanation:
     """Generate an explainable, fact-based narrative audit for an evaluated parcel."""
     m = parcel.metrics
@@ -71,21 +73,42 @@ def generate_parcel_explanation(
         contributions["plantable_area_points"] = c_area
         contributions["data_confidence_points"] = c_conf
 
-        # Identify primary drivers among available components
-        ranked_components = []
+        # Identify differentiating drivers vs baseline aggregate contributors
+        diff_keys = set(differentiating_components) if differentiating_components is not None else {"stability_gain", "geotechnical_need"}
+
+        diff_ranked = []
+        non_diff_list: List[str] = []
+
         if c_need is not None:
-            ranked_components.append(("Geotechnical Stability Deficit", c_need))
+            if "geotechnical_need" in diff_keys and c_need > 0.0:
+                diff_ranked.append(("Geotechnical Stability Deficit", c_need))
+            elif c_need > 0.0:
+                non_diff_list.append(f"Geotechnical Stability Deficit: +{c_need:.1f} pts (baseline contributor)")
+
         if c_gain is not None:
-            ranked_components.append(("Modeled Root Reinforcement Gain", c_gain))
-        ranked_components.append(("Plantable Acreage Capacity", c_area))
-        ranked_components.append(("Input Data Completeness", c_conf))
+            if "stability_gain" in diff_keys and c_gain > 0.0:
+                diff_ranked.append(("Modeled Root Reinforcement Gain", c_gain))
+            elif c_gain > 0.0:
+                non_diff_list.append(f"Modeled Root Reinforcement Gain: +{c_gain:.1f} pts (baseline contributor)")
 
-        ranked_components.sort(key=lambda x: x[1], reverse=True)
+        if "plantable_area" in diff_keys and c_area > 0.0:
+            diff_ranked.append(("Plantable Acreage Capacity", c_area))
+        elif c_area > 0.0:
+            non_diff_list.append(f"Plantable Acreage Capacity: +{c_area:.1f} pts (baseline aggregate contributor; uniform regular {parcel.plantable_area_ha:.1f} ha cells)")
 
-        for name, pts in ranked_components:
-            if pts > 0.0:
-                pct = round(pts / max(0.1, sc.priority_score_index) * 100.0)
-                drivers.append(f"{name}: +{pts:.1f} pts ({pct}% of total score)")
+        if "data_confidence" in diff_keys and c_conf > 0.0:
+            diff_ranked.append(("Input Data Completeness", c_conf))
+        elif c_conf > 0.0:
+            non_diff_list.append(f"Input Data Completeness: +{c_conf:.1f} pts (baseline aggregate contributor; uniform across study grid)")
+
+        diff_ranked.sort(key=lambda x: x[1], reverse=True)
+
+        for name, pts in diff_ranked:
+            pct = round(pts / max(0.1, sc.priority_score_index) * 100.0)
+            drivers.append(f"{name}: +{pts:.1f} pts ({pct}% of total score)")
+
+        if not drivers:
+            drivers.append("Uniform Baseline (Non-Differentiating)")
 
     # 3. Topographic Context
     slope_mean = m.get("slope_mean_deg")
@@ -167,6 +190,7 @@ def generate_parcel_explanation(
         exclusion_details=parcel.exclusion_reasons,
         score_component_contributions=contributions,
         primary_ranking_drivers=drivers,
+        non_differentiating_contributors=non_diff_list,
         topographic_context=topo_context,
         geotechnical_context=geo_context,
         vegetation_context=veg_context,

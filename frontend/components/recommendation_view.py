@@ -219,6 +219,10 @@ def render_recommendation_tab(api_base_url: str):
     if missing_layers:
         st.info(f"ℹ️ **Missing Data Policy Applied ({policy_name}):** The following layers were absent: {', '.join(missing_layers)}. Active component weights were adjusted accordingly.")
 
+    if not rec_data.get("is_discriminative", True):
+        diff_warn = rec_data.get("differentiation_warning") or "Active scoring components are uniform across candidate parcels. Ranking suppressed to avoid false precision."
+        st.warning(f"⚠️ {diff_warn}")
+
     # Budget summary if present
     b_sum = rec_data.get("budget_summary")
     if b_sum:

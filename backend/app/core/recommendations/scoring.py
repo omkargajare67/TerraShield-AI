@@ -16,7 +16,11 @@ class NormalizationConfig(BaseModel):
     """Configurable normalization scale bounds for multi-criteria priority scoring."""
     fs_target: float = Field(default=1.3, ge=1.0, le=3.0, description="Stability benchmark Factor of Safety target")
     critical_fs: float = Field(default=0.7, ge=0.1, le=1.2, description="Critical limit-equilibrium failure FS threshold")
-    max_delta_fs_ref: float = Field(default=15.0, gt=0.0, description="Divisor for modeled stability improvement (delta FS)")
+    max_delta_fs_ref: float = Field(
+        default=15.0,
+        gt=0.0,
+        description="Configurable normalization reference divisor for modeled stability improvement (delta FS), not a validated engineering threshold",
+    )
     max_area_ref_ha: float = Field(default=15.0, gt=0.0, description="Divisor for plantable acreage in hectares")
 
 
@@ -57,6 +61,10 @@ class ParcelScoreBreakdown(BaseModel):
     score_weights_active: ScoringWeights
     missing_components: List[str] = Field(default_factory=list)
     missing_data_policy_applied: str = MissingDataPolicy.RENORMALIZE_AVAILABLE.value
+    input_coverage_complete: bool = Field(
+        default=True,
+        description="True if all expected input raster layers are present; False if expected layers are missing",
+    )
     normalization_config_used: NormalizationConfig
     scoring_version: str = "v1.1-explainable-multi-criteria"
 
@@ -137,13 +145,23 @@ def calculate_parcel_score(
 
     if cov_terrain is not None and cov_ndvi is not None:
         conf_score = max(0.0, min(1.0, (cov_terrain / 100.0 + cov_ndvi / 100.0) * 0.5))
+        input_coverage_complete = True
     elif cov_terrain is not None:
-        # NDVI absent: evaluate confidence strictly on terrain coverage without assuming 100% NDVI
-        conf_score = max(0.0, min(1.0, cov_terrain / 100.0))
+        # NDVI layer absent: evaluate confidence strictly as available layer share
+        # Terrain accounts for 50% of expected observational raster inputs.
+        conf_score = max(0.0, min(1.0, (cov_terrain / 100.0) * 0.5))
         missing_components.append("ndvi_coverage")
+        input_coverage_complete = False
+    elif cov_ndvi is not None:
+        # Terrain layer absent: evaluate confidence strictly as available layer share
+        conf_score = max(0.0, min(1.0, (cov_ndvi / 100.0) * 0.5))
+        missing_components.append("terrain_coverage")
+        input_coverage_complete = False
     else:
         conf_score = 0.0
         missing_components.append("terrain_coverage")
+        missing_components.append("ndvi_coverage")
+        input_coverage_complete = False
 
     # 5. Composite Score Calculation under MissingDataPolicy
     active_need_w = w_cfg.weight_geotechnical_need
@@ -223,5 +241,6 @@ def calculate_parcel_score(
         score_weights_active=active_weights_obj,
         missing_components=missing_components,
         missing_data_policy_applied=missing_data_policy.value,
+        input_coverage_complete=input_coverage_complete,
         normalization_config_used=norm,
     )

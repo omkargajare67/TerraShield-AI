@@ -385,10 +385,14 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
     top_summaries: List[RankedParcelSummary] = []
     for p in ranking_result.ranked_eligible_parcels[:20]:
         sc = p.score_breakdown
-        exp = generate_parcel_explanation(p, provenance)
+        exp = generate_parcel_explanation(
+            p,
+            provenance,
+            differentiating_components=ranking_result.differentiating_components,
+        )
         top_summaries.append(
             RankedParcelSummary(
-                rank=p.rank or 0,
+                rank=p.rank,
                 parcel_id=p.parcel_id,
                 priority_score_index=sc.priority_score_index if sc else 0.0,
                 plantable_area_ha=round(p.plantable_area_ha, 2),
@@ -396,7 +400,7 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
                 slope_mean_deg=p.metrics.get("slope_mean_deg"),
                 fs_baseline_mean=p.metrics.get("fs_baseline_mean"),
                 fs_delta_mean=p.metrics.get("fs_delta_mean"),
-                primary_driver=exp.primary_ranking_drivers[0] if exp.primary_ranking_drivers else "Composite Multi-Criteria",
+                primary_driver=exp.primary_ranking_drivers[0] if exp.primary_ranking_drivers else "Uniform Baseline (Non-Differentiating)",
                 modeled_stability_gain_per_stem=p.modeled_stability_gain_per_stem,
                 estimated_required_stems=p.estimated_required_stems,
             )
@@ -423,6 +427,10 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
         scoring_weights_active=active_w,
         applied_missing_data_policy=ranking_result.applied_missing_data_policy,
         missing_layers_detected=ranking_result.missing_components_detected,
+        is_discriminative=ranking_result.is_discriminative,
+        differentiation_warning=ranking_result.differentiation_warning,
+        differentiating_components=ranking_result.differentiating_components,
+        constant_components=ranking_result.constant_components,
         normalization_references=norm_cfg.model_dump(),
         dem_source_provenance="NASA SRTM NASADEM Global 1 Arc-Second V001 (NASADEM_HGT_n11e076)",
         provenance_warning=provenance.geotechnical_scenario_note,

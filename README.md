@@ -6,7 +6,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.38+-FF4B4B.svg)](https://streamlit.io/)
 [![Phase](https://img.shields.io/badge/Phase-4%20of%205%20(Spatial%20Recommendation%20Engine)-blue.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-128%20Passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-132%20Passing-brightgreen.svg)]()
 
 ---
 

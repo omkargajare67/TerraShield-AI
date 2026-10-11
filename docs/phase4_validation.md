@@ -1,9 +1,9 @@
 # TerraShield AI — Phase 4 Validation & Audit Report
 
 **Date:** 2026-10-11  
-**Phase:** 4 of 5 (Spatial Recommendation Engine) — Final Scoring & Provenance Audit  
+**Phase:** 4 of 5 (Spatial Recommendation Engine) — Final Scoring, Provenance & Edge-Case Audit  
 **Branch:** `feature/phase-4-spatial-recommendations`  
-**Test Suite Status:** 128 passed, 0 failed  
+**Test Suite Status:** 132 passed, 0 failed  
 
 ---
 
@@ -11,7 +11,7 @@
 
 Phase 4 of TerraShield AI has been implemented, validated, audited, and hardened directly within the existing workspace. The Spatial Recommendation Engine ingests the verified Wayanad elevation, slope, aspect, Sentinel-2 NDVI, and Phase 3 geotechnical limit-equilibrium stability rasters to generate, evaluate, filter, and rank candidate reforestation parcels across the Western Ghats pilot corridor.
 
-All 85 regression tests from Phases 1–3 pass without modification, and 35 automated Phase 4 tests (including 7 focused audit tests) have been verified, confirming complete multi-resolution raster alignment, ellipsoidal area calculation, eligibility exclusion filtering, deterministic prioritization, missing metric handling, and verified DEM data provenance.
+All 85 regression tests from Phases 1–3 pass without modification, and 39 automated Phase 4 tests (including 11 focused audit & edge-case tests) have been verified, confirming complete multi-resolution raster alignment, ellipsoidal area calculation, eligibility exclusion filtering, deterministic prioritization, missing metric handling, verified DEM data provenance, and edge-case non-discriminative ranking suppression.
 
 ---
 
@@ -84,6 +84,18 @@ During the final Phase 4 audit, the scoring formulation, missing metric policies
 - Cross-referencing `metadata_manifest.json`, Planetary Computer STAC records, file size ($518,816$ bytes), and SHA-256 checksum (`680aa3cb46f4b7d148b2d62224ff8f8daa9591dcee5921d46c0f8c4c8a5ca2b6`) conclusively identified the elevation raster as **NASA SRTM NASADEM Global 1 Arc-Second V001** (`NASADEM_HGT_n11e076`), not Copernicus GLO-30.
 - All documentation, export manifests, and provenance badges have been synchronized with the verified source.
 
+### 4.4 Edge-Case Verifications & Hardening
+1. **Missing NDVI Data Confidence Scaling:**
+   - Evaluated the scenario where terrain coverage is 100% but the expected Sentinel-2 NDVI layer is missing.
+   - The engine scales data confidence to $0.50$ (reflecting that 1 of 2 expected observational streams is available), sets `input_coverage_complete = False`, and flags `"ndvi_coverage"` in `missing_components`.
+   - Distinct from a parcel where NDVI is present and sampled with $0.0\%$ valid coverage (`input_coverage_complete = True` and `"ndvi_coverage"` not flagged).
+2. **Non-Discriminative Ranking Suppression:**
+   - Under `RENORMALIZE_AVAILABLE` when geotechnical data is missing, candidate parcels on regular 300m grids have identical plantable area ($9.0\text{ ha}$) and identical terrain confidence ($100\%$), yielding an identical priority score ($77.14/100$) for every parcel.
+   - The engine automatically detects zero score spread and zero active component variance, marks `is_discriminative = False`, sets `rank = None` for all parcels, and emits an explicit `differentiation_warning`, suppressing arbitrary tie-broken 1..N rankings.
+3. **Accurate Explanation Ranking Drivers:**
+   - Parcel explanations distinguish differentiating components ($S_{\text{gain}}, S_{\text{need}}$) from constant baseline contributors ($S_{\text{area}}, S_{\text{conf}}$).
+   - Non-differentiating baseline components are documented as aggregate contributors that do not differentiate candidate parcels in regular grid runs.
+
 ---
 
 ## 5. Automated Test Results
@@ -93,12 +105,12 @@ The complete test suite was executed via pytest:
 pytest -v
 ```
 **Results:**
-- **128 passed, 0 failed** in 4.23s.
+- **132 passed, 0 failed** in 3.96s.
 - `test_analysis_service.py`: 6 passed
 - `test_api.py`: 4 passed
 - `test_geospatial.py`: 41 passed
 - `test_geotechnical.py`: 23 passed
-- `test_recommendations.py`: 35 passed (including 7 focused audit tests)
+- `test_recommendations.py`: 39 passed (including 11 focused audit & edge-case tests)
 - `test_frontend_components.py`: 4 passed
 - `test_geojson.py`: 4 passed
 

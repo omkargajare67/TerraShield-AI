@@ -516,7 +516,7 @@ def test_budget_allocation_limits():
             eligibility_status=EligibilityStatus.ELIGIBLE_UNDER_AVAILABLE_CONSTRAINTS,
             exclusion_reasons=[],
             protected_area_clearance_note="",
-            metrics={"tree_density_mean_stems_ha": 100.0, "fs_delta_mean": 2.0},
+            metrics={"tree_density_mean_stems_ha": 100.0, "fs_delta_mean": 2.0 + i * 0.5},
         )
         for i in range(5)
     ]
@@ -757,8 +757,10 @@ def test_missing_ndvi_not_defaulted_to_100():
     }
     sc = calculate_parcel_score(metrics=m_no_ndvi, plantable_area_ha=5.0)
 
-    # When NDVI is missing, confidence score must reflect terrain coverage (90% = 0.90), NOT (90 + 100)/2 = 0.95!
-    assert sc.data_confidence_score == 0.90
+    # When NDVI is missing, confidence score must reflect incomplete input coverage:
+    # 90% terrain coverage accounts for 50% of expected input streams -> 0.5 * 0.90 = 0.45
+    assert sc.data_confidence_score == 0.45
+    assert sc.input_coverage_complete is False
     assert "ndvi_coverage" in sc.missing_components
 
 
@@ -875,4 +877,110 @@ def test_api_run_with_custom_normalization_and_policy(client):
     assert data["normalization_references"]["max_delta_fs_ref"] == 20.0
     assert data["normalization_references"]["max_area_ref_ha"] == 25.0
     assert "NASADEM" in data["dem_source_provenance"]
+
+
+def test_missing_ndvi_exact_scenario_terrain_100_does_not_become_one():
+    """EDGE CASE 1: Terrain = 100%, NDVI missing -> confidence score must NOT become 1.0."""
+    m = {
+        "terrain_coverage_pct": 100.0,
+        "ndvi_coverage_pct": None,  # Expected NDVI layer missing!
+        "fs_baseline_mean": 1.2,
+        "fs_delta_mean": 6.0,
+    }
+    sc = calculate_parcel_score(metrics=m, plantable_area_ha=9.0)
+
+    # Incomplete coverage must NOT be awarded 1.0. With 1 of 2 expected layers present: 0.5 * 1.0 = 0.50
+    assert sc.data_confidence_score == 0.50
+    assert sc.input_coverage_complete is False
+    assert "ndvi_coverage" in sc.missing_components
+
+
+def test_distinction_between_calculated_zero_and_missing_ndvi():
+    """EDGE CASE 1B: Distinguish genuinely calculated 0.0% NDVI from missing NDVI layer."""
+    m_calc_zero = {
+        "terrain_coverage_pct": 100.0,
+        "ndvi_coverage_pct": 0.0,  # Layer present and sampled: 0.0% valid pixels
+        "fs_baseline_mean": 1.2,
+        "fs_delta_mean": 6.0,
+    }
+    sc = calculate_parcel_score(metrics=m_calc_zero, plantable_area_ha=9.0)
+
+    # Numerically 0.5 * 1.0 + 0.5 * 0.0 = 0.50, BUT input coverage was complete across expected streams
+    assert sc.data_confidence_score == 0.50
+    assert sc.input_coverage_complete is True
+    assert "ndvi_coverage" not in sc.missing_components
+
+
+def test_non_discriminative_ranking_suppression_when_no_components_differentiate():
+    """EDGE CASE 2: When no available component differentiates parcels, suppress arbitrary ranking."""
+    # Create two identical candidate parcels lacking geotechnical data
+    p1 = EvaluatedParcel(
+        parcel_id="PARCEL_B",
+        geometry={"type": "Polygon", "coordinates": [[[76.0, 11.5], [76.01, 11.5], [76.01, 11.51], [76.0, 11.51], [76.0, 11.5]]]},
+        total_area_ha=9.0,
+        plantable_area_ha=9.0,
+        eligibility_status=EligibilityStatus.ELIGIBLE_UNDER_AVAILABLE_CONSTRAINTS,
+        metrics={"terrain_coverage_pct": 100.0, "ndvi_coverage_pct": 100.0, "fs_baseline_mean": None, "fs_delta_mean": None},
+    )
+    p2 = EvaluatedParcel(
+        parcel_id="PARCEL_A",
+        geometry={"type": "Polygon", "coordinates": [[[76.01, 11.5], [76.02, 11.5], [76.02, 11.51], [76.01, 11.51], [76.01, 11.5]]]},
+        total_area_ha=9.0,
+        plantable_area_ha=9.0,
+        eligibility_status=EligibilityStatus.ELIGIBLE_UNDER_AVAILABLE_CONSTRAINTS,
+        metrics={"terrain_coverage_pct": 100.0, "ndvi_coverage_pct": 100.0, "fs_baseline_mean": None, "fs_delta_mean": None},
+    )
+
+    res = rank_candidate_parcels(
+        evaluated_parcels=[p1, p2],
+        run_id="test_non_diff",
+        timestamp="2026-10-11T12:00:00Z",
+        missing_data_policy=MissingDataPolicy.RENORMALIZE_AVAILABLE,
+    )
+
+    # Must flag ranking as non-discriminative and suppress arbitrary tie-broken ordinal ranks
+    assert res.is_discriminative is False
+    assert res.differentiation_warning is not None
+    assert "NON_DISCRIMINATIVE_RANKING" in res.differentiation_warning
+    assert p1.rank is None
+    assert p2.rank is None
+    assert "UNRANKED" in p1.leverage_metric_note
+
+
+def test_explainability_identifies_differentiating_drivers_vs_baseline_contributors():
+    """EDGE CASE 2B: Explainability accurately identifies differentiating drivers vs baseline constants."""
+    p = EvaluatedParcel(
+        parcel_id="PARCEL_01",
+        geometry={"type": "Polygon", "coordinates": [[[76.0, 11.5], [76.01, 11.5], [76.01, 11.51], [76.0, 11.51], [76.0, 11.5]]]},
+        total_area_ha=9.0,
+        plantable_area_ha=9.0,
+        eligibility_status=EligibilityStatus.ELIGIBLE_UNDER_AVAILABLE_CONSTRAINTS,
+        metrics={
+            "terrain_coverage_pct": 100.0,
+            "ndvi_coverage_pct": 100.0,
+            "fs_baseline_mean": 1.1,
+            "fraction_subtarget_fs": 0.4,
+            "fs_delta_mean": 6.0,
+            "slope_mean_deg": 22.0,
+        },
+    )
+    p.score_breakdown = calculate_parcel_score(metrics=p.metrics, plantable_area_ha=p.plantable_area_ha)
+
+    # Stability gain and need differentiate parcels; area and conf are uniform constants
+    exp = generate_parcel_explanation(
+        parcel=p,
+        differentiating_components=["stability_gain", "geotechnical_need"],
+    )
+
+    # Primary drivers must list differentiating factors
+    driver_names = [d.split(":")[0] for d in exp.primary_ranking_drivers]
+    assert "Modeled Root Reinforcement Gain" in driver_names
+    assert "Geotechnical Stability Deficit" in driver_names
+    assert "Input Data Completeness" not in driver_names
+
+    # Baseline aggregate contributors must be documented separately
+    non_diff_names = [nd.split(":")[0] for nd in exp.non_differentiating_contributors]
+    assert "Input Data Completeness" in non_diff_names
+    assert "Plantable Acreage Capacity" in non_diff_names
+
 

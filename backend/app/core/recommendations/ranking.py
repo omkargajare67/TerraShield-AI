@@ -20,8 +20,8 @@ class EvaluatedParcel(BaseModel):
     total_area_ha: float
     plantable_area_ha: float
     eligibility_status: EligibilityStatus
-    exclusion_reasons: List[str]
-    protected_area_clearance_note: str
+    exclusion_reasons: List[str] = Field(default_factory=list)
+    protected_area_clearance_note: str = ""
     metrics: Dict[str, Any]
     score_breakdown: Optional[ParcelScoreBreakdown] = None
     rank: Optional[int] = None
@@ -47,6 +47,10 @@ class RankingResult(BaseModel):
     normalization_config: NormalizationConfig = Field(default_factory=NormalizationConfig)
     applied_missing_data_policy: str = MissingDataPolicy.RENORMALIZE_AVAILABLE.value
     missing_components_detected: List[str] = Field(default_factory=list)
+    is_discriminative: bool = True
+    differentiation_warning: Optional[str] = None
+    differentiating_components: List[str] = Field(default_factory=list)
+    constant_components: List[str] = Field(default_factory=list)
     ranking_timestamp: str
 
 
@@ -136,8 +140,49 @@ def rank_candidate_parcels(
             p.leverage_metric_note = "UNAVAILABLE: Inadequate terrain raster data coverage."
             insufficient_list.append(p)
 
+    # Assess component discriminability across eligible parcels
+    differentiating_components: List[str] = []
+    constant_components: List[str] = []
+    is_discriminative = True
+    differentiation_warning: Optional[str] = None
+
+    if len(eligible_list) > 1:
+        # Check active components: need, gain, area, conf
+        comp_records: Dict[str, List[float]] = {}
+        needs = [p.score_breakdown.geotechnical_need_score for p in eligible_list if p.score_breakdown and p.score_breakdown.geotechnical_need_score is not None]
+        if len(needs) == len(eligible_list):
+            comp_records["geotechnical_need"] = needs
+        gains = [p.score_breakdown.stability_gain_score for p in eligible_list if p.score_breakdown and p.score_breakdown.stability_gain_score is not None]
+        if len(gains) == len(eligible_list):
+            comp_records["stability_gain"] = gains
+        areas = [p.score_breakdown.plantable_area_score for p in eligible_list if p.score_breakdown]
+        if len(areas) == len(eligible_list):
+            comp_records["plantable_area"] = areas
+        confs = [p.score_breakdown.data_confidence_score for p in eligible_list if p.score_breakdown]
+        if len(confs) == len(eligible_list):
+            comp_records["data_confidence"] = confs
+
+        for c_name, vals in comp_records.items():
+            if max(vals) - min(vals) > 1e-4:
+                differentiating_components.append(c_name)
+            else:
+                constant_components.append(c_name)
+
+        priority_scores = [p.score_breakdown.priority_score_index for p in eligible_list if p.score_breakdown]
+        score_spread = max(priority_scores) - min(priority_scores) if priority_scores else 0.0
+
+        if len(differentiating_components) == 0 or score_spread <= 1e-4:
+            is_discriminative = False
+            uniform_score = priority_scores[0] if priority_scores else 0.0
+            differentiation_warning = (
+                f"NON_DISCRIMINATIVE_RANKING: Available active components provide zero variance across candidate parcels "
+                f"(uniform priority score: {uniform_score:.2f}/100). No active component meaningfully differentiates candidate parcels. "
+                "Arbitrary tie-broken ranking suppressed to avoid presenting false precision as a priority ranking."
+            )
+    else:
+        differentiating_components = ["composite"]
+
     # Deterministic sorting for eligible parcels
-    # Sort key: (-priority_score_index, -stability_gain_score, -plantable_area_ha, parcel_id)
     def sort_key(item: EvaluatedParcel):
         sc = item.score_breakdown
         priority = sc.priority_score_index if sc else -1.0
@@ -147,9 +192,16 @@ def rank_candidate_parcels(
 
     eligible_list.sort(key=sort_key)
 
-    # Assign 1-indexed ranks
-    for rank_idx, parcel in enumerate(eligible_list, start=1):
-        parcel.rank = rank_idx
+    # Assign ranks only if ranking is discriminative; suppress arbitrary ranking if all parcels tie
+    if is_discriminative:
+        for rank_idx, parcel in enumerate(eligible_list, start=1):
+            parcel.rank = rank_idx
+    else:
+        for parcel in eligible_list:
+            parcel.rank = None
+            parcel.leverage_metric_note = (
+                "UNRANKED: Scoring components are non-discriminative across candidate parcels. Ranking suppressed."
+            )
 
     return RankingResult(
         run_id=run_id,
@@ -164,5 +216,9 @@ def rank_candidate_parcels(
         normalization_config=norm_cfg,
         applied_missing_data_policy=missing_data_policy.value,
         missing_components_detected=sorted(list(all_missing_components)),
+        is_discriminative=is_discriminative,
+        differentiation_warning=differentiation_warning,
+        differentiating_components=differentiating_components,
+        constant_components=constant_components,
         ranking_timestamp=timestamp,
     )

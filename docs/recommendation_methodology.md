@@ -90,7 +90,7 @@ Only eligible parcels receive priority scores and ordinal ranks. Disqualified pa
 Scoring normalization is governed by `NormalizationConfig`:
 - `fs_target`: Target Factor of Safety benchmark (default $1.3$).
 - `critical_fs`: Critical limit-equilibrium failure FS threshold (default $0.7$).
-- `max_delta_fs_ref`: Modeled stability gain divisor (default $15.0$).
+- `max_delta_fs_ref`: Configurable normalization reference divisor for modeled stability improvement (default $15.0$). **This is a mathematical normalization scale reference, NOT a validated civil or geotechnical engineering threshold.**
 - `max_area_ref_ha`: Plantable parcel area divisor (default $15.0\text{ ha}$).
 
 1. **Geotechnical Need Score ($S_{\text{need}}$):**
@@ -98,11 +98,14 @@ Scoring normalization is governed by `NormalizationConfig`:
    Parcels with acute baseline instability receive the highest score. If geotechnical layers are absent, evaluated according to the active `MissingDataPolicy`.
 2. **Stability Improvement Score ($S_{\text{gain}}$):**
    $$S_{\text{gain}} = \min\left(1.0, \frac{\overline{\Delta FS}}{\text{max\_delta\_fs\_ref}}\right)$$
-   Reflects modeled gain in shear resistance from root cohesion. Clamped at $1.0$ for extreme cliff outliers.
+   Reflects modeled gain in shear resistance from root cohesion relative to the configured run-wide normalization reference.
 3. **Plantable Acreage Capacity ($S_{\text{area}}$):**
    $$S_{\text{area}} = \min\left(1.0, \frac{A_{\text{plantable}}}{\text{max\_area\_ref\_ha}}\right)$$
 4. **Input Data Completeness ($S_{\text{conf}}$):**
-   Evaluates valid data coverage across required layers. If optional layers (such as Sentinel-2 NDVI) are not present, confidence evaluates available terrain layers without falsely assuming 100% completeness.
+   Evaluates completeness across expected observational raster inputs (50% terrain from DEM, 50% vegetation from Sentinel-2 NDVI):
+   - **Both present:** $S_{\text{conf}} = 0.5 \cdot \frac{\text{cov}_{\text{terrain}}}{100} + 0.5 \cdot \frac{\text{cov}_{\text{ndvi}}}{100}$, with `input_coverage_complete = True`.
+   - **NDVI missing:** $S_{\text{conf}} = 0.5 \cdot \frac{\text{cov}_{\text{terrain}}}{100}$ (at 100% terrain coverage, $S_{\text{conf}} = 0.50$, NOT 1.0), with `input_coverage_complete = False` and `"ndvi_coverage"` flagged in `missing_components`.
+   - **NDVI calculated 0.0%:** If the NDVI raster is present and sampled with 0.0% valid pixels, $S_{\text{conf}} = 0.50$, but `input_coverage_complete = True` and `"ndvi_coverage"` is NOT flagged as missing, preserving the critical distinction between calculated zero coverage and missing data.
 
 ### 5.2 Empirical Audit of the 15.0 Divisor ($S_{\text{gain}}$)
 An empirical audit across the Wayanad corridor pilot study area established:
@@ -135,7 +138,11 @@ When environmental or geotechnical layers are unavailable across a run, the syst
 With user-configured or re-normalized weights summing to $1.0$:
 $$\text{Priority Index} = 100 \times \sum_{i \in \text{available}} w_{i,\text{active}} S_i$$
 
-### 5.5 Deterministic Sorting
+### 5.5 Discriminative Ranking & Non-Discriminative Suppression
+Parcels are evaluated for component discriminability across the run:
+- **Differentiating Drivers:** Active components with non-zero variance across candidate parcels ($S_{\text{gain}}$ and $S_{\text{need}}$ in standard runs) drive the ordinal rankings and are reported in parcel explanation summaries.
+- **Baseline Aggregate Contributors:** Uniform components ($S_{\text{area}} = 0.600$ across regular 9.0 ha cells, $S_{\text{conf}} = 1.000$ across complete data) contribute baseline points to the composite score index but do not differentiate candidate parcels.
+- **Non-Discriminative Suppression:** If active components provide zero variance across candidate parcels (e.g. missing geotechnical data under `RENORMALIZE_AVAILABLE` where area and confidence are identical for all parcels), the engine **suppresses arbitrary tie-broken ranking**. It flags the run as `is_discriminative = False`, sets `rank = None` for all candidate parcels, and returns an explicit warning (`differentiation_warning`), preventing false precision from being presented to decision-makers.
 Parcels are sorted strictly by:
 1. `priority_score_index` (Descending)
 2. `stability_gain_score` (Descending)

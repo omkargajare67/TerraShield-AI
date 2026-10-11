@@ -248,6 +248,10 @@ def export_recommendation_summary_json(
             "weights_configured": ranking_result.scoring_weights.model_dump(),
             "applied_missing_data_policy": ranking_result.applied_missing_data_policy,
             "missing_components_detected": ranking_result.missing_components_detected,
+            "is_discriminative": ranking_result.is_discriminative,
+            "differentiation_warning": ranking_result.differentiation_warning,
+            "differentiating_components": ranking_result.differentiating_components,
+            "constant_components": ranking_result.constant_components,
             "normalization_references": ranking_result.normalization_config.model_dump(),
         },
         "parcel_inventory": {
@@ -293,14 +297,19 @@ def export_recommendation_report_html(
     rows_html = []
     for p in top_parcels:
         sc = p.score_breakdown
-        exp = generate_parcel_explanation(p, provenance)
+        exp = generate_parcel_explanation(
+            p,
+            provenance,
+            differentiating_components=ranking_result.differentiating_components,
+        )
         m = p.metrics
         base_fs_val = f"{m.get('fs_baseline_mean'):.2f}" if m.get('fs_baseline_mean') is not None else "N/A"
         gain_val = f"+{m.get('fs_delta_mean'):.2f}" if m.get('fs_delta_mean') is not None else "N/A"
+        rank_label = f"#{p.rank}" if p.rank is not None else "Tied"
 
         rows_html.append(f"""
         <tr>
-            <td style="font-weight: 700; color: #10b981;">#{p.rank}</td>
+            <td style="font-weight: 700; color: #10b981;">{rank_label}</td>
             <td style="font-family: monospace; font-weight: 600;">{p.parcel_id}</td>
             <td style="font-weight: 700; color: #0284c7;">{sc.priority_score_index:.1f}</td>
             <td>{p.plantable_area_ha:.2f} ha</td>
@@ -310,6 +319,15 @@ def export_recommendation_report_html(
             <td style="font-size: 0.85rem; color: #4b5563;">{exp.primary_ranking_drivers[0] if exp.primary_ranking_drivers else 'N/A'}</td>
         </tr>
         """)
+
+    non_diff_banner = ""
+    if not ranking_result.is_discriminative:
+        non_diff_banner = f"""
+        <div style="background-color: #fff3cd; border: 2px solid #ffc107; color: #856404; padding: 1.25rem; border-radius: 8px; margin-bottom: 2rem;">
+            <h3 style="margin-top: 0; color: #856404;">⚠️ Non-Discriminative Ranking Notice</h3>
+            <p style="margin-bottom: 0;">{ranking_result.differentiation_warning}</p>
+        </div>
+        """
 
     disclosures_html = "".join([f"<li>{d}</li>" for d in provenance.scientific_disclosures])
     norm = ranking_result.normalization_config
@@ -442,6 +460,8 @@ def export_recommendation_report_html(
             <h1>TerraShield AI — Spatial Planting Recommendation Report</h1>
             <p style="color: #64748b; margin: 0;">Run ID: <code>{ranking_result.run_id}</code> | Generated: {ranking_result.ranking_timestamp}</p>
         </div>
+
+        {non_diff_banner}
 
         <div class="alert">
             <strong>⚠️ Scientific Integrity & Provenance Disclosure:</strong><br>

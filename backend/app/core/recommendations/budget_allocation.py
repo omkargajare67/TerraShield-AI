@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from backend.app.core.recommendations.ranking import EvaluatedParcel
+from backend.app.core.recommendations.eligibility import EligibilityStatus
 
 
 class BudgetAllocationConfig(BaseModel):
@@ -20,7 +21,7 @@ class BudgetAllocationConfig(BaseModel):
 class ParcelAllocation(BaseModel):
     """Budget and stem allocation for a single eligible parcel."""
     parcel_id: str
-    rank: int
+    rank: Optional[int] = None
     plantable_area_ha: float
     stems_allocated: int
     target_density_stems_ha: float
@@ -55,9 +56,8 @@ def allocate_planting_budget(
     remaining_budget = config.total_budget_inr
     allocations: List[ParcelAllocation] = []
     total_stems = 0
-
     for parcel in ranked_parcels:
-        if parcel.rank is None or parcel.plantable_area_ha <= 0:
+        if parcel.eligibility_status != EligibilityStatus.ELIGIBLE_UNDER_AVAILABLE_CONSTRAINTS or parcel.plantable_area_ha <= 0:
             continue
 
         if remaining_budget < (config.fixed_parcel_setup_cost_inr + config.cost_per_sapling_inr):
