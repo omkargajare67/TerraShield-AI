@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, FolderPlus, AlertCircle } from 'lucide-react';
+import { X, FolderPlus, AlertCircle, RefreshCw } from 'lucide-react';
 import type { ProjectMetadata, RecommendationRunResponse, SystemHealth } from './api/types';
 import { api } from './api/client';
 
@@ -33,6 +33,17 @@ export function App() {
   const [isSubmittingProject, setIsSubmittingProject] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
+  // Health check function
+  const checkHealth = useCallback(async () => {
+    try {
+      const h = await api.getHealth();
+      setHealth(h);
+    } catch (err) {
+      console.warn('API health check returned offline:', err);
+      setHealth({ status: 'offline', version: 'unknown' });
+    }
+  }, []);
+
   // Load initial health and project list
   const refreshProjects = useCallback(async () => {
     try {
@@ -47,17 +58,36 @@ export function App() {
   }, [selectedProjectId]);
 
   useEffect(() => {
-    // Check API health
-    api
-      .getHealth()
-      .then((h) => setHealth(h))
-      .catch((err) => {
-        console.warn('API health check returned offline:', err);
-        setHealth({ status: 'offline', version: 'unknown' });
-      });
-
+    checkHealth();
     refreshProjects();
-  }, [refreshProjects]);
+  }, [checkHealth, refreshProjects]);
+
+  const activeProject = projects.find((p) => p.id === selectedProjectId) || null;
+
+  // Whenever selected project changes, check if it has saved runs and load latest run data
+  useEffect(() => {
+    if (!activeProject) return;
+
+    const savedRuns = activeProject.saved_runs || [];
+    const runIdToLoad = activeProject.latest_run_id || (savedRuns.length > 0 ? savedRuns[savedRuns.length - 1].run_id : null);
+
+    if (runIdToLoad && (!latestRun || latestRun.run_id !== runIdToLoad)) {
+      api
+        .getRunSummary(runIdToLoad)
+        .then((summary) => {
+          setLatestRun(summary);
+          if (summary.artifacts?.geojson) {
+            api
+              .fetchArtifactJson(summary.artifacts.geojson)
+              .then((geo) => setParcelsGeojson(geo))
+              .catch((e) => console.warn('Could not load artifact GeoJSON:', e));
+          }
+        })
+        .catch((err) => {
+          console.warn('Could not load saved run summary for project:', err);
+        });
+    }
+  }, [activeProject, latestRun]);
 
   // When a new analysis finishes in wizard
   const handleAnalysisComplete = (result: RecommendationRunResponse) => {
@@ -75,8 +105,7 @@ export function App() {
         });
     }
 
-    // Auto-navigate to Results tab
-    setActiveTab('results');
+    refreshProjects();
   };
 
   const handleCreateProject = async (e: React.FormEvent) => {
@@ -110,8 +139,6 @@ export function App() {
     }
   };
 
-  const activeProject = projects.find((p) => p.id === selectedProjectId) || null;
-
   return (
     <div className="min-h-screen bg-terra-deep text-terra-ivory font-sans flex flex-col selection:bg-terra-mint selection:text-terra-deep">
       {/* Top Navbar */}
@@ -121,7 +148,27 @@ export function App() {
         onSelectProject={(id) => setSelectedProjectId(id)}
         onOpenCreateModal={() => setIsCreateModalOpen(true)}
         health={health}
+        onRetryHealth={checkHealth}
       />
+
+      {/* Backend Offline Advisory Banner */}
+      {health && health.status === 'offline' && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-6 py-2.5 text-xs text-amber-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              Backend API is currently offline. Ensure the FastAPI server is running on port 8000.
+            </span>
+          </div>
+          <button
+            onClick={checkHealth}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold transition"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry Connection</span>
+          </button>
+        </div>
+      )}
 
       {/* Main App Body with Sidebar + Content */}
       <div className="flex-1 flex overflow-hidden">
@@ -144,6 +191,9 @@ export function App() {
                   latestRun={latestRun}
                   onStartAnalysis={() => setActiveTab('wizard')}
                   onOpenDataLibrary={() => setActiveTab('projects')}
+                  onSelectProject={(id) => setSelectedProjectId(id)}
+                  onOpenResults={() => setActiveTab('results')}
+                  onOpenCreateModal={() => setIsCreateModalOpen(true)}
                 />
               </motion.div>
             )}
@@ -158,7 +208,10 @@ export function App() {
               >
                 <AnalysisWizardView
                   project={activeProject}
+                  projects={projects}
+                  onSelectProject={(id) => setSelectedProjectId(id)}
                   onAnalysisComplete={handleAnalysisComplete}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
                 />
               </motion.div>
             )}
@@ -170,12 +223,13 @@ export function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                className="h-[calc(100vh-4rem)] p-4"
+                className="py-4"
               >
                 <MapExplorerView
                   activeProject={activeProject}
                   parcelsGeojson={parcelsGeojson}
                   latestRun={latestRun}
+                  onNavigateToWizard={() => setActiveTab('wizard')}
                 />
               </motion.div>
             )}
@@ -226,6 +280,8 @@ export function App() {
                   onSelectProject={(id) => setSelectedProjectId(id)}
                   onRefreshProjects={refreshProjects}
                   onOpenCreateModal={() => setIsCreateModalOpen(true)}
+                  onNavigateToWizard={() => setActiveTab('wizard')}
+                  onNavigateToResults={() => setActiveTab('results')}
                 />
               </motion.div>
             )}
@@ -354,14 +410,14 @@ export function App() {
                   <button
                     type="button"
                     onClick={() => setIsCreateModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-terra-slate hover:text-terra-ivory text-xs font-semibold transition"
+                    className="px-4 py-2.5 rounded-xl text-terra-slate hover:text-terra-ivory text-xs font-semibold transition cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingProject || !createFormData.name.trim()}
-                    className="px-6 py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-lg shadow-terra-mint/10 disabled:opacity-50"
+                    className="px-6 py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-lg shadow-terra-mint/10 disabled:opacity-50 cursor-pointer"
                   >
                     {isSubmittingProject ? 'Creating...' : 'Create Workspace'}
                   </button>

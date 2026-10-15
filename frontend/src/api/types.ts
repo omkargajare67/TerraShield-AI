@@ -130,6 +130,7 @@ export interface RankedParcelSummary {
 export interface RecommendationRunResponse {
   run_id: string;
   timestamp: string;
+  cell_size_m?: number;
   total_parcels: number;
   eligible_count: number;
   excluded_count: number;

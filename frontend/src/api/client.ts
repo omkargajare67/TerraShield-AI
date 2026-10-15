@@ -142,6 +142,10 @@ class ApiClient {
   async fetchArtifactJson(artifactId: string): Promise<any> {
     return this.request<any>(`/api/v1/recommendations/artifacts/${encodeURIComponent(artifactId)}`);
   }
+
+  async getRunSummary(runId: string): Promise<RecommendationRunResponse> {
+    return this.request<RecommendationRunResponse>(`/api/v1/recommendations/runs/${encodeURIComponent(runId)}`);
+  }
 }
 
 export const api = new ApiClient();

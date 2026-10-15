@@ -11,6 +11,8 @@ import {
   MapPin,
   RefreshCw,
   ChevronRight,
+  ArrowRight,
+  BarChart3,
 } from 'lucide-react';
 import type { ProjectMetadata, VectorReport } from '../api/types';
 import { api } from '../api/client';
@@ -22,6 +24,8 @@ interface ProjectsDataLibraryViewProps {
   onSelectProject: (id: string) => void;
   onRefreshProjects: () => void;
   onOpenCreateModal: () => void;
+  onNavigateToWizard?: () => void;
+  onNavigateToResults?: () => void;
 }
 
 export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = ({
@@ -30,6 +34,8 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
   onSelectProject,
   onRefreshProjects,
   onOpenCreateModal,
+  onNavigateToWizard,
+  onNavigateToResults,
 }) => {
   const [activeTab, setActiveTab] = useState<'projects' | 'data'>('projects');
   const [vectorFile, setVectorFile] = useState<File | null>(null);
@@ -72,7 +78,7 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
 
     try {
       await api.uploadRaster(activeProject.id, rasterFile, rasterLayerType);
-      setStatusMessage(`Raster (${rasterLayerType.toUpperCase()}) uploaded and validated successfully!`);
+      setStatusMessage(`Raster (${rasterLayerType.toUpperCase()}) uploaded and verified successfully!`);
       setRasterFile(null);
       onRefreshProjects();
     } catch (err: any) {
@@ -98,59 +104,59 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-terra-border/30">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono tracking-wider font-semibold uppercase bg-terra-mint/15 text-terra-mint border border-terra-mint/25">
-              Workspace Asset Control
+              Workspace & Asset Management
             </span>
             <span className="text-xs text-terra-slate font-mono">
-              Vector & Raster Data Provenance
+              Vector & Raster Provenance
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-display font-semibold text-terra-ivory">
-            Projects & Geospatial Data Library
+            My Projects & Data Library
           </h1>
           <p className="text-sm text-terra-muted mt-1">
             Manage environmental study workspaces, boundary shapefiles, elevation rasters, and multispectral assets.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Tab Switcher */}
           <div className="flex items-center p-1 rounded-xl bg-terra-deep/70 border border-terra-border/40 text-xs">
             <button
               onClick={() => setActiveTab('projects')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition font-medium ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                 activeTab === 'projects'
                   ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
                   : 'text-terra-muted hover:text-terra-ivory'
               }`}
             >
               <FolderKanban className="w-3.5 h-3.5" />
-              Projects ({projects.length})
+              <span>Projects ({projects.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('data')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition font-medium ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                 activeTab === 'data'
                   ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
                   : 'text-terra-muted hover:text-terra-ivory'
               }`}
             >
               <Database className="w-3.5 h-3.5" />
-              Data Layers & Upload
+              <span>Data Layers & Upload</span>
             </button>
           </div>
 
           <button
             onClick={onOpenCreateModal}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-terra-mint text-terra-deep text-xs font-semibold hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-terra-mint text-terra-deep text-xs font-semibold hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            New Project
+            <span>New Project</span>
           </button>
         </div>
       </div>
@@ -180,6 +186,9 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((proj) => {
               const isSelected = proj.id === selectedProjectId;
+              const layerCount = Object.keys(proj.layers || {}).length;
+              const runCount = proj.saved_runs?.length || 0;
+
               return (
                 <div
                   key={proj.id}
@@ -214,27 +223,57 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
 
                   <div className="space-y-1.5 pt-3 border-t border-terra-border/30 text-[11px] text-terra-slate font-mono">
                     <div className="flex justify-between">
-                      <span>Area Type:</span>
-                      <span className="text-terra-ivory">{proj.study_area_type || 'Custom Area'}</span>
+                      <span>Attached Layers:</span>
+                      <span className="text-terra-ivory font-semibold">{layerCount} layers</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Geotech Preset:</span>
-                      <span className="text-terra-ivory">
-                        {proj.geotechnical_parameters?.name || proj.geotech_preset_id || 'Default'}
-                      </span>
+                      <span>Completed Runs:</span>
+                      <span className="text-terra-ivory font-semibold">{runCount} run{runCount === 1 ? '' : 's'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Area Type:</span>
+                      <span className="text-terra-ivory">{proj.study_area_type || 'Catchment'}</span>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-terra-border/30 flex items-center justify-between">
+                  <div className="mt-4 pt-3 border-t border-terra-border/30 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectProject(proj.id);
+                          if (onNavigateToWizard) onNavigateToWizard();
+                        }}
+                        className="text-xs text-terra-mint hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Run Analysis</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+
+                      {runCount > 0 && onNavigateToResults && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectProject(proj.id);
+                            onNavigateToResults();
+                          }}
+                          className="text-xs text-terra-ivory hover:text-terra-mint font-medium flex items-center gap-1 cursor-pointer"
+                        >
+                          <BarChart3 className="w-3 h-3 text-terra-mint" />
+                          <span>Results</span>
+                        </button>
+                      )}
+                    </div>
+
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelectProject(proj.id);
                         setActiveTab('data');
                       }}
-                      className="text-xs text-terra-mint hover:underline font-semibold flex items-center gap-1"
+                      className="text-xs text-terra-muted hover:text-terra-ivory flex items-center gap-1 cursor-pointer"
                     >
-                      View Data Layers
+                      <span>Layers</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -268,10 +307,10 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
               <button
                 onClick={handleProcessTerrain}
                 disabled={isUploading}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-terra-forest border border-terra-mint/40 text-terra-mint hover:bg-terra-forest/80 text-xs font-semibold transition"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-terra-forest border border-terra-mint/40 text-terra-mint hover:bg-terra-forest/80 text-xs font-semibold transition cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isUploading ? 'animate-spin' : ''}`} />
-                Process DEM (Slope + Aspect)
+                <span>Process DEM (Generate Slope & Aspect)</span>
               </button>
             )}
           </div>
@@ -324,10 +363,10 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
                 <button
                   type="submit"
                   disabled={!vectorFile || !activeProject || isUploading}
-                  className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Upload className="w-4 h-4" />
-                  {isUploading ? 'Validating Geometry...' : 'Upload & Validate Vector'}
+                  <span>{isUploading ? 'Validating Geometry...' : 'Upload & Validate Vector'}</span>
                 </button>
               </form>
 
@@ -368,16 +407,16 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
                     onChange={(e) => setRasterLayerType(e.target.value as any)}
                     className="w-full px-3 py-2 rounded-xl bg-terra-deep/70 border border-terra-border/60 text-terra-ivory text-xs font-mono focus:outline-none focus:border-terra-mint"
                   >
-                    <option value="dem">Digital Elevation Model (DEM)</option>
-                    <option value="ndvi">Normalized Difference Veg Index (NDVI)</option>
-                    <option value="red">Sentinel-2 Band 4 (Red)</option>
-                    <option value="nir">Sentinel-2 Band 8 (NIR)</option>
+                    <option value="dem">Digital Elevation Model (DEM) - Required</option>
+                    <option value="ndvi">Vegetation Index (NDVI) - Optional</option>
+                    <option value="red">Sentinel-2 Band 4 (Red) - Optional</option>
+                    <option value="nir">Sentinel-2 Band 8 (NIR) - Optional</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-mono text-terra-muted mb-1.5">
-                    Select GeoTIFF File
+                    Select GeoTIFF File (.tif)
                   </label>
                   <input
                     type="file"
@@ -390,10 +429,10 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
                 <button
                   type="submit"
                   disabled={!rasterFile || !activeProject || isUploading}
-                  className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Upload className="w-4 h-4" />
-                  {isUploading ? 'Validating GeoTIFF...' : 'Upload & Validate GeoTIFF'}
+                  <span>{isUploading ? 'Validating GeoTIFF...' : 'Upload & Validate GeoTIFF'}</span>
                 </button>
               </form>
             </div>
@@ -403,3 +442,5 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
     </div>
   );
 };
+
+export default ProjectsDataLibraryView;

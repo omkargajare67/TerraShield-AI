@@ -4,8 +4,8 @@ import { TextEffect } from '../components/motion-primitives/TextEffect';
 import { InView } from '../components/motion-primitives/InView';
 import { MetricCard } from '../components/common/MetricCard';
 import { ProvenanceBanner } from '../components/common/ProvenanceBanner';
+import { HelpTooltip } from '../components/common/HelpTooltip';
 import {
-  Compass,
   ArrowRight,
   ShieldCheck,
   MapPin,
@@ -13,6 +13,9 @@ import {
   Mountain,
   Layers,
   Sparkles,
+  BarChart3,
+  FolderPlus,
+  Compass,
 } from 'lucide-react';
 
 interface OverviewViewProps {
@@ -20,6 +23,9 @@ interface OverviewViewProps {
   latestRun: RecommendationRunResponse | null;
   onStartAnalysis: () => void;
   onOpenDataLibrary: () => void;
+  onSelectProject?: (id: string) => void;
+  onOpenResults?: () => void;
+  onOpenCreateModal?: () => void;
 }
 
 export const OverviewView: React.FC<OverviewViewProps> = ({
@@ -27,42 +33,83 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   latestRun,
   onStartAnalysis,
   onOpenDataLibrary,
+  onSelectProject,
+  onOpenResults,
+  onOpenCreateModal,
 }) => {
   const bounds = activeProject?.bounds || { minx: 76.0, miny: 11.55, maxx: 76.1, maxy: 11.65 };
   const dlon = Math.abs(bounds.maxx - bounds.minx);
   const dlat = Math.abs(bounds.maxy - bounds.miny);
   const approxHa = Math.round(dlon * 111 * dlat * 111 * 100);
   const layerCount = Object.keys(activeProject?.layers || {}).length;
+  const hasRuns = (activeProject?.saved_runs && activeProject.saved_runs.length > 0) || Boolean(latestRun);
+
+  // If no project exists at all
+  if (!activeProject) {
+    return (
+      <div className="max-w-4xl mx-auto px-6 py-16 animate-fade-in text-center space-y-6">
+        <div className="p-12 rounded-3xl bg-terra-forest/40 border border-terra-border/50 backdrop-blur-xl space-y-5 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-terra-mint/15 text-terra-mint border border-terra-mint/30 flex items-center justify-center mx-auto shadow-inner">
+            <Sparkles className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-display font-semibold text-terra-ivory">
+            Welcome to TerraShield AI
+          </h2>
+          <p className="text-terra-muted text-sm max-w-md mx-auto leading-relaxed">
+            Understand your terrain and plan restoration better. Select a demonstration watershed or create a new workspace to begin.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-3">
+            {onSelectProject && (
+              <button
+                onClick={() => onSelectProject('wayanad_pilot')}
+                className="px-6 py-3 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-lg shadow-terra-mint/10 flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Explore Demo Project (Wayanad)</span>
+              </button>
+            )}
+            {onOpenCreateModal && (
+              <button
+                onClick={onOpenCreateModal}
+                className="px-5 py-3 rounded-xl bg-terra-forest/80 text-terra-ivory font-semibold text-xs border border-terra-border/60 hover:bg-terra-forest transition flex items-center gap-2"
+              >
+                <FolderPlus className="w-4 h-4 text-terra-mint" />
+                <span>Create New Project</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-fade-in">
       {/* Hero Banner with Haikei SVG Backdrop */}
       <div className="relative rounded-3xl overflow-hidden border border-terra-border/50 shadow-2xl bg-terra-forest/40 backdrop-blur-xl">
-        {/* Haikei SVG Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-bottom opacity-35 mix-blend-luminosity pointer-events-none"
           style={{ backgroundImage: `url('/backgrounds/hero-layered-peaks.svg')` }}
         />
-        {/* Subtle Ambient Radial Lighting */}
         <div className="absolute inset-0 bg-gradient-to-r from-terra-deep/95 via-terra-deep/80 to-transparent pointer-events-none" />
 
-        <div className="relative z-10 px-8 py-12 md:py-16 max-w-3xl space-y-5">
+        <div className="relative z-10 px-6 sm:px-8 py-10 md:py-14 max-w-3xl space-y-4 sm:space-y-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-terra-mint/15 border border-terra-mint/25 text-terra-mint text-xs font-semibold backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-terra-mint" />
-            <span>TERRASHIELD AI • ENVIRONMENTAL INTELLIGENCE</span>
+            <span>TERRASHIELD AI • ENVIRONMENTAL DECISION SUPPORT</span>
           </div>
 
           <TextEffect
             as="h1"
             per="word"
-            className="text-3xl sm:text-4xl md:text-5xl font-display font-semibold text-terra-ivory tracking-tight leading-[1.15]"
+            className="text-2xl sm:text-4xl md:text-5xl font-display font-semibold text-terra-ivory tracking-tight leading-[1.15]"
           >
-            Understand Terrain. Prioritize Restoration.
+            Understand Your Terrain. Plan Restoration Better.
           </TextEffect>
 
           <p className="text-terra-muted text-sm sm:text-base leading-relaxed max-w-xl">
-            Explore terrain characteristics, model hillslope limit-equilibrium stability, and prioritize
-            high-impact reforestation parcels using generalized geospatial and geotechnical intelligence.
+            Analyze terrain and vegetation data, explore slope stability, and identify high-impact
+            locations that may need further assessment.
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -73,12 +120,33 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               <span>Start New Analysis</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
+
+            {hasRuns && onOpenResults && (
+              <button
+                onClick={onOpenResults}
+                className="px-5 py-3 rounded-xl bg-terra-forest/90 hover:bg-terra-forest text-terra-ivory font-semibold text-xs border border-terra-mint/30 transition flex items-center gap-2 cursor-pointer shadow-sm"
+              >
+                <BarChart3 className="w-4 h-4 text-terra-mint" />
+                <span>View Latest Results</span>
+              </button>
+            )}
+
+            {activeProject.id !== 'wayanad_pilot' && onSelectProject && (
+              <button
+                onClick={() => onSelectProject('wayanad_pilot')}
+                className="px-5 py-3 rounded-xl bg-terra-forest/70 hover:bg-terra-forest text-terra-ivory font-semibold text-xs border border-terra-border/50 transition flex items-center gap-2 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-terra-mint" />
+                <span>Explore Demo Project</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenDataLibrary}
-              className="px-5 py-3 rounded-xl bg-terra-forest/80 hover:bg-terra-forest text-terra-ivory font-semibold text-xs border border-terra-border/50 transition flex items-center gap-2 cursor-pointer"
+              className="px-5 py-3 rounded-xl bg-terra-forest/50 hover:bg-terra-forest/80 text-terra-muted hover:text-terra-ivory font-semibold text-xs border border-terra-border/40 transition flex items-center gap-2 cursor-pointer"
             >
-              <Compass className="w-4 h-4 text-terra-mint" />
-              <span>Workspace Data Library</span>
+              <Compass className="w-4 h-4 text-terra-slate" />
+              <span>Workspace Data</span>
             </button>
           </div>
         </div>
@@ -86,7 +154,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
       <ProvenanceBanner />
 
-      {/* Workspace KPI Row */}
+      {/* Honest Workspace Summary Cards */}
       <InView direction="up" delay={0.1}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
@@ -95,33 +163,58 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             suffix=" ha"
             icon={MapPin}
             color="emerald"
-            subtext={activeProject?.name || 'Active Study Corridor'}
-            badge={activeProject?.study_area_type || 'BBox'}
+            subtext={activeProject.name}
+            badge="Boundary"
           />
+
           <MetricCard
-            label="Candidate Parcels"
-            value={latestRun?.total_parcels || (activeProject?.id === 'wayanad_pilot' ? 1369 : 5)}
-            icon={Mountain}
-            color="blue"
-            subtext="Grid resolution 300m"
-            badge="Ellipsoidal"
-          />
-          <MetricCard
-            label="Eligible for Planting"
-            value={latestRun?.eligible_count || (activeProject?.id === 'wayanad_pilot' ? 1369 : 3)}
-            icon={Trees}
-            color="emerald"
-            subtext="Slope & Reserve Filter"
-            badge="Candidate"
-          />
-          <MetricCard
-            label="Data Layers Attached"
+            label="Data Layers Ready"
             value={layerCount}
             icon={Layers}
             color="amber"
-            subtext="DEM, Slope, NDVI, Vectors"
+            subtext="Elevation, Slope, NDVI"
             badge="Verified"
           />
+
+          {latestRun ? (
+            <>
+              <MetricCard
+                label="Evaluated Locations"
+                value={latestRun.total_parcels}
+                icon={Mountain}
+                color="blue"
+                subtext={`Grid resolution ${latestRun.cell_size_m || 300}m`}
+                badge="Modeled"
+              />
+              <MetricCard
+                label="Recommended for Planting"
+                value={latestRun.eligible_count}
+                icon={Trees}
+                color="emerald"
+                subtext="Passed stability & canopy rules"
+                badge="Actionable"
+              />
+            </>
+          ) : (
+            <>
+              <MetricCard
+                label="Analysis Status"
+                value={hasRuns ? 1 : 0}
+                icon={Mountain}
+                color="blue"
+                subtext={hasRuns ? 'Prior run available' : 'Ready for first analysis'}
+                badge={hasRuns ? 'Available' : 'Pending'}
+              />
+              <MetricCard
+                label="Planting Candidates"
+                value={hasRuns ? (activeProject.saved_runs?.[0]?.eligible_count || 0) : 0}
+                icon={Trees}
+                color="emerald"
+                subtext={hasRuns ? 'Eligible in saved run' : 'Run analysis to compute'}
+                badge={hasRuns ? 'Candidate' : 'Ready'}
+              />
+            </>
+          )}
         </div>
       </InView>
 
@@ -137,10 +230,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 </div>
                 <div>
                   <h3 className="font-display font-semibold text-terra-ivory text-base">
-                    {activeProject?.name || 'No Active Project'}
+                    {activeProject.name}
                   </h3>
                   <p className="text-xs text-terra-slate">
-                    {activeProject?.description || 'Select or create a project in the navigation header.'}
+                    {activeProject.description || 'Active environmental workspace for terrain modeling.'}
                   </p>
                 </div>
               </div>
@@ -152,73 +245,108 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
               <div className="p-3 rounded-xl bg-terra-deep/60 border border-terra-border/40">
-                <span className="text-terra-slate block text-[11px]">Coordinate CRS</span>
-                <span className="font-mono text-terra-ivory font-semibold">{activeProject?.native_crs || 'EPSG:4326'}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-terra-deep/60 border border-terra-border/40">
-                <span className="text-terra-slate block text-[11px]">Geotechnical Preset</span>
-                <span className="text-terra-ivory font-semibold">
-                  {activeProject?.geotechnical_parameters?.name || 'Tropical Monsoon Saprolite'}
+                <div className="flex items-center gap-1 text-terra-slate text-[11px] mb-1">
+                  <span>Coordinate System</span>
+                  <HelpTooltip
+                    term="Coordinate System"
+                    text="Defines how 3D geographic locations on Earth are represented on a 2D map."
+                  />
+                </div>
+                <span className="font-mono text-terra-ivory font-semibold truncate block">
+                  {activeProject.native_crs || 'EPSG:4326 (WGS 84)'}
                 </span>
               </div>
+
               <div className="p-3 rounded-xl bg-terra-deep/60 border border-terra-border/40">
-                <span className="text-terra-slate block text-[11px]">Saved Scenarios</span>
+                <div className="flex items-center gap-1 text-terra-slate text-[11px] mb-1">
+                  <span>Soil & Terrain Preset</span>
+                  <HelpTooltip
+                    term="Geotechnical Preset"
+                    text="Pre-calibrated soil mechanics assumptions including effective cohesion and internal friction angle."
+                  />
+                </div>
+                <span className="text-terra-ivory font-semibold truncate block">
+                  {activeProject.geotechnical_parameters?.name || 'Tropical Monsoon Saprolite'}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-terra-deep/60 border border-terra-border/40">
+                <span className="text-terra-slate block text-[11px] mb-1">Saved Analyses</span>
                 <span className="font-mono text-terra-ivory font-semibold">
-                  {activeProject?.saved_runs?.length || 0} runs
+                  {activeProject.saved_runs?.length || 0} run{activeProject.saved_runs?.length === 1 ? '' : 's'}
                 </span>
               </div>
             </div>
 
-            <div className="pt-2 flex items-center justify-between text-xs text-terra-slate border-t border-terra-border/30 font-mono">
-              <span>Bounding Coordinates: {bounds.minx.toFixed(2)}°E, {bounds.miny.toFixed(2)}°N to {bounds.maxx.toFixed(2)}°E, {bounds.maxy.toFixed(2)}°N</span>
+            <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-terra-slate border-t border-terra-border/30 gap-2">
+              <span className="font-mono text-[11px]">
+                Extent: {bounds.minx.toFixed(2)}°E, {bounds.miny.toFixed(2)}°N to {bounds.maxx.toFixed(2)}°E, {bounds.maxy.toFixed(2)}°N
+              </span>
               <button
                 onClick={onStartAnalysis}
-                className="font-semibold text-terra-mint hover:text-terra-ivory flex items-center gap-1 cursor-pointer font-sans"
+                className="font-semibold text-terra-mint hover:text-terra-ivory flex items-center gap-1 cursor-pointer"
               >
-                <span>Configure Analysis</span>
+                <span>Start 5-Step Analysis</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
-          {/* Quick Workflow Action Card */}
+          {/* Guided 5-Step Workflow Card */}
           <div className="rounded-2xl p-6 bg-terra-forest/30 border border-terra-border/40 backdrop-blur-xl space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
               <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-terra-mint">
-                Decision Support Workflow
+                Simple 5-Step Workflow
               </span>
-              <h4 className="font-display font-semibold text-terra-ivory text-sm">Guided 5-Step Pipeline</h4>
-              <ul className="text-xs text-terra-muted space-y-2">
-                <li className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50">1</span>
-                  <span>Select study area & boundaries</span>
+              <h4 className="font-display font-semibold text-terra-ivory text-sm">
+                How TerraShield AI Works
+              </h4>
+              <ol className="text-xs text-terra-muted space-y-2.5">
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50 shrink-0 mt-0.5 font-bold">1</span>
+                  <div>
+                    <span className="font-medium text-terra-ivory block">Choose Your Area</span>
+                    <span className="text-[11px] text-terra-slate">Confirm your study boundary or watershed.</span>
+                  </div>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50">2</span>
-                  <span>Validate DEM & Sentinel-2 layers</span>
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50 shrink-0 mt-0.5 font-bold">2</span>
+                  <div>
+                    <span className="font-medium text-terra-ivory block">Add Your Data</span>
+                    <span className="text-[11px] text-terra-slate">Verify elevation (DEM) and vegetation (NDVI) layers.</span>
+                  </div>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50">3</span>
-                  <span>Tune soil cohesion & root tensile strength</span>
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50 shrink-0 mt-0.5 font-bold">3</span>
+                  <div>
+                    <span className="font-medium text-terra-ivory block">Review Settings</span>
+                    <span className="text-[11px] text-terra-slate">Select priority goal and soil parameters.</span>
+                  </div>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50">4</span>
-                  <span>Execute multi-criteria ranking algorithm</span>
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50 shrink-0 mt-0.5 font-bold">4</span>
+                  <div>
+                    <span className="font-medium text-terra-ivory block">Run Analysis</span>
+                    <span className="text-[11px] text-terra-slate">Execute physics modeling & multi-criteria ranking.</span>
+                  </div>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50">5</span>
-                  <span>Inspect parcels & download GIS exports</span>
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-terra-deep text-terra-mint flex items-center justify-center font-mono text-[10px] border border-terra-border/50 shrink-0 mt-0.5 font-bold">5</span>
+                  <div>
+                    <span className="font-medium text-terra-ivory block">Explore Results</span>
+                    <span className="text-[11px] text-terra-slate">Inspect parcels, map layers, and download GIS exports.</span>
+                  </div>
                 </li>
-              </ul>
+              </ol>
             </div>
 
             <button
               onClick={onStartAnalysis}
-              className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10 flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
-              <span>Launch Analysis Wizard</span>
+              <span>Begin Analysis</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -227,3 +355,5 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     </div>
   );
 };
+
+export default OverviewView;

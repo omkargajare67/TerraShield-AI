@@ -15,11 +15,14 @@ import {
   X,
   Compass,
   Mountain,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import type { RecommendationRunResponse, RankedParcelSummary } from '../api/types';
 import { api } from '../api/client';
 import { MetricCard } from '../components/common/MetricCard';
 import { ProvenanceBanner } from '../components/common/ProvenanceBanner';
+import { HelpTooltip } from '../components/common/HelpTooltip';
 
 interface ResultsViewProps {
   latestRun: RecommendationRunResponse | null;
@@ -38,6 +41,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   const [sortBy, setSortBy] = useState<'rank' | 'score' | 'delta_fs' | 'area'>('rank');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedParcel, setSelectedParcel] = useState<RankedParcelSummary | null>(null);
+  const [isTechDetailsOpen, setIsTechDetailsOpen] = useState(false);
 
   const parcels: RankedParcelSummary[] = useMemo(() => {
     return latestRun?.top_recommendations || latestRun?.ranked_parcels || [];
@@ -119,33 +123,27 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
     };
   }, [parcels, latestRun]);
 
+  // Clean empty state
   if (!latestRun && parcels.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="relative rounded-3xl overflow-hidden border border-terra-border/50 bg-gradient-to-b from-terra-forest/40 to-terra-deep/80 p-12 text-center backdrop-blur-xl">
-          <div
-            className="absolute inset-0 opacity-15 pointer-events-none bg-center bg-cover"
-            style={{ backgroundImage: `url('/backgrounds/blob-scene.svg')` }}
-          />
-          <div className="relative z-10 max-w-xl mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-terra-mint/10 border border-terra-mint/20 text-terra-mint flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <Award className="w-8 h-8" />
-            </div>
-            <h2 className="text-2xl md:text-3xl font-display font-semibold text-terra-ivory mb-3">
-              No Analysis Results Available
-            </h2>
-            <p className="text-terra-muted text-sm leading-relaxed mb-8">
-              Run a slope stability & multi-criteria ecological prioritization in the Analysis Wizard
-              to generate geotechnical metrics, stability gains, and parcel rankings.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <button
-                onClick={onNavigateToWizard}
-                className="px-6 py-3 rounded-xl bg-terra-mint text-terra-deep font-semibold text-sm hover:bg-terra-mint/90 transition shadow-lg shadow-terra-mint/10"
-              >
-                Launch Analysis Wizard
-              </button>
-            </div>
+      <div className="max-w-4xl mx-auto px-6 py-16 animate-fade-in text-center space-y-6">
+        <div className="p-10 rounded-3xl bg-terra-forest/40 border border-terra-border/50 backdrop-blur-xl shadow-2xl space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-terra-mint/15 text-terra-mint border border-terra-mint/25 flex items-center justify-center mx-auto shadow-inner">
+            <Award className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-display font-semibold text-terra-ivory">
+            No Analysis Results Yet
+          </h2>
+          <p className="text-terra-muted text-sm max-w-md mx-auto leading-relaxed">
+            Run a 5-step analysis to evaluate slope stability, calculate bio-reinforcement gains, and explore prioritized planting parcels.
+          </p>
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={onNavigateToWizard}
+              className="px-6 py-3 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-lg shadow-terra-mint/10"
+            >
+              Start New Analysis
+            </button>
           </div>
         </div>
       </div>
@@ -153,16 +151,16 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-fade-in">
       {/* Header & Meta */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-terra-border/30">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono tracking-wider font-semibold uppercase bg-terra-mint/15 text-terra-mint border border-terra-mint/25">
-              Run Summary #{latestRun?.run_id?.slice(0, 8) || 'active'}
+              Run #{latestRun?.run_id?.slice(0, 8) || 'active'}
             </span>
             <span className="text-xs text-terra-slate font-mono">
-              Provenance: {latestRun?.dem_source_provenance || 'Infinite Slope LE + Multi-Criteria'}
+              Provenance: {latestRun?.dem_source_provenance || 'Infinite-Slope LE + Multi-Criteria'}
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-display font-semibold text-terra-ivory">
@@ -177,11 +175,12 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={onNavigateToMap}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terra-forest/80 hover:bg-terra-forest text-terra-ivory text-xs font-semibold border border-terra-border/40 transition shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terra-forest/80 hover:bg-terra-forest text-terra-ivory text-xs font-semibold border border-terra-border/40 transition shadow-sm cursor-pointer"
           >
             <Compass className="w-4 h-4 text-terra-mint" />
-            Inspect on Map
+            <span>Inspect on Map</span>
           </button>
+
           {latestRun?.artifacts?.geojson && (
             <a
               href={api.getArtifactUrl(latestRun.artifacts.geojson)}
@@ -191,7 +190,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terra-mint text-terra-deep hover:bg-terra-mint/90 text-xs font-semibold transition shadow-md shadow-terra-mint/10"
             >
               <Download className="w-4 h-4" />
-              Export GeoJSON
+              <span>Export GeoJSON</span>
             </a>
           )}
         </div>
@@ -209,18 +208,18 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
           color="slate"
         />
         <MetricCard
-          label="Eligible for Planting"
+          label="Recommended for Planting"
           value={kpis.eligible}
           icon={TreePine}
-          subtext={`${((kpis.eligible / (kpis.total || 1)) * 100).toFixed(0)}% pass criteria`}
+          subtext={`${((kpis.eligible / (kpis.total || 1)) * 100).toFixed(0)}% pass safety rules`}
           badge="Actionable"
           color="emerald"
         />
         <MetricCard
-          label="Excluded / Non-Eligible"
+          label="Excluded Locations"
           value={kpis.excluded}
           icon={ShieldAlert}
-          subtext="Slope &lt;10° or masked"
+          subtext="Slope >45° or canopy"
           color="amber"
         />
         <MetricCard
@@ -228,7 +227,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
           value={kpis.totalAreaHa}
           suffix=" ha"
           icon={Mountain}
-          subtext="Combined surface"
+          subtext="Sum of eligible zones"
           color="emerald"
         />
         <MetricCard
@@ -238,7 +237,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
           icon={TrendingUp}
           prefix="+"
           subtext="Stability increase"
-          badge="Reinforced"
+          badge="Modeled"
           color="emerald"
         />
       </div>
@@ -247,15 +246,15 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
       {latestRun?.artifacts && (
         <div className="p-4 rounded-2xl bg-terra-forest/20 border border-terra-border/40 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-terra-mint/10 border border-terra-mint/20 flex items-center justify-center text-terra-mint">
+            <div className="w-9 h-9 rounded-xl bg-terra-mint/10 border border-terra-mint/20 flex items-center justify-center text-terra-mint shrink-0">
               <Download className="w-4 h-4" />
             </div>
             <div>
               <h4 className="text-xs font-semibold text-terra-ivory uppercase tracking-wider font-mono">
-                Analysis Artifacts Available for Download
+                Download Analysis Deliverables
               </h4>
               <p className="text-xs text-terra-slate">
-                Download verified audit logs, metrics tables, and spatial layers directly.
+                Export verified audit tables, metrics summaries, and spatial polygon layers.
               </p>
             </div>
           </div>
@@ -306,7 +305,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-terra-forest/60 hover:bg-terra-forest text-terra-ivory text-xs border border-terra-border/50 font-mono transition"
               >
                 <FileText className="w-3.5 h-3.5 text-terra-mint" />
-                Run Summary JSON
+                Summary JSON
               </a>
             )}
           </div>
@@ -341,7 +340,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
             <div className="flex items-center p-1 rounded-xl bg-terra-deep/60 border border-terra-border/40 text-xs">
               <button
                 onClick={() => setFilterEligibility('all')}
-                className={`px-3 py-1.5 rounded-lg transition font-medium ${
+                className={`px-3 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                   filterEligibility === 'all'
                     ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
                     : 'text-terra-muted hover:text-terra-ivory'
@@ -351,17 +350,17 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               </button>
               <button
                 onClick={() => setFilterEligibility('eligible')}
-                className={`px-3 py-1.5 rounded-lg transition font-medium ${
+                className={`px-3 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                   filterEligibility === 'eligible'
                     ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
                     : 'text-terra-muted hover:text-terra-ivory'
                 }`}
               >
-                Eligible ({kpis.eligible})
+                Recommended ({kpis.eligible})
               </button>
               <button
                 onClick={() => setFilterEligibility('excluded')}
-                className={`px-3 py-1.5 rounded-lg transition font-medium ${
+                className={`px-3 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                   filterEligibility === 'excluded'
                     ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
                     : 'text-terra-muted hover:text-terra-ivory'
@@ -377,15 +376,15 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               onChange={(e) => setSortBy(e.target.value as any)}
               className="px-3 py-2 rounded-xl bg-terra-deep/70 border border-terra-border/60 text-terra-ivory text-xs font-mono focus:outline-none focus:border-terra-mint"
             >
-              <option value="rank">Sort by: Rank Priority</option>
-              <option value="score">Sort by: Priority Score</option>
-              <option value="delta_fs">Sort by: Stability Gain (&Delta;FS)</option>
-              <option value="area">Sort by: Parcel Area</option>
+              <option value="rank">Sort: Rank Priority</option>
+              <option value="score">Sort: Priority Score</option>
+              <option value="delta_fs">Sort: Modeled ΔFS Gain</option>
+              <option value="area">Sort: Plantable Area</option>
             </select>
 
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="p-2 rounded-xl bg-terra-deep/70 border border-terra-border/60 text-terra-slate hover:text-terra-ivory text-xs font-mono transition"
+              className="p-2 rounded-xl bg-terra-deep/70 border border-terra-border/60 text-terra-slate hover:text-terra-ivory text-xs font-mono transition cursor-pointer"
               title="Toggle sort direction"
             >
               {sortOrder === 'asc' ? '▲ Asc' : '▼ Desc'}
@@ -400,9 +399,18 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               <tr className="border-b border-terra-border/30 bg-terra-deep/40 text-terra-slate font-mono uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4 font-medium">Rank</th>
                 <th className="py-3.5 px-4 font-medium">Parcel ID</th>
-                <th className="py-3.5 px-4 font-medium">Priority Score</th>
-                <th className="py-3.5 px-4 font-medium">Baseline FS</th>
-                <th className="py-3.5 px-4 font-medium">&Delta;FS Gain</th>
+                <th className="py-3.5 px-4 font-medium">
+                  Priority Score
+                  <HelpTooltip text="Normalized composite index (0-100%) indicating restoration priority." />
+                </th>
+                <th className="py-3.5 px-4 font-medium">
+                  Baseline FS
+                  <HelpTooltip text="Factor of Safety without tree roots." />
+                </th>
+                <th className="py-3.5 px-4 font-medium">
+                  Modeled &Delta;FS
+                  <HelpTooltip text="Modeled stability increase with root reinforcement." />
+                </th>
                 <th className="py-3.5 px-4 font-medium">Area (ha)</th>
                 <th className="py-3.5 px-4 font-medium">Status</th>
                 <th className="py-3.5 px-4 font-medium text-right">Details</th>
@@ -461,17 +469,18 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                     </td>
                     <td className="py-3.5 px-4">
                       {isEligible ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
-                          Eligible
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
+                          Recommended
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-terra-slate/20 text-terra-slate border border-terra-slate/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-terra-slate/20 text-terra-slate border border-terra-slate/30">
                           Excluded
                         </span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedParcel(p);
@@ -506,7 +515,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedParcel(null)}
-              className="fixed inset-0 bg-terra-deep/70 backdrop-blur-sm"
+              className="fixed inset-0 bg-terra-deep/75 backdrop-blur-sm"
             />
 
             <motion.div
@@ -525,7 +534,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                       </span>
                       {getIsEligible(selectedParcel) ? (
                         <span className="text-[10px] font-semibold text-emerald-400">
-                          ● High Planting Suitability
+                          ● Recommended for Planting
                         </span>
                       ) : (
                         <span className="text-[10px] font-semibold text-terra-slate">
@@ -547,7 +556,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 </div>
 
                 {/* Score Spotlight */}
-                <div className="p-4 rounded-2xl bg-terra-deep/70 border border-terra-border/40 mb-6 space-y-3">
+                <div className="p-4 rounded-2xl bg-terra-deep/70 border border-terra-border/40 mb-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-terra-slate">Priority Composite Score</span>
                     <span className="text-xl font-mono font-bold text-terra-mint">
@@ -563,39 +572,39 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                     />
                   </div>
                   <p className="text-[11px] text-terra-slate italic">
-                    Primary Driver: {selectedParcel.primary_driver || 'Slope Stability Gain'}
+                    Primary Ranking Driver: {selectedParcel.primary_driver || 'Hillslope Stability Gain'}
                   </p>
                 </div>
 
-                {/* Detailed Geotechnical Metrics */}
-                <div className="space-y-4 mb-6">
+                {/* Plain Key Findings */}
+                <div className="space-y-3 mb-5">
                   <h4 className="text-xs font-mono uppercase tracking-wider text-terra-mint font-semibold">
-                    Geotechnical & Terrain Parameters
+                    Key Location Assessment
                   </h4>
 
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 rounded-xl bg-terra-deep/40 border border-terra-border/30">
-                      <span className="text-terra-slate block mb-1">Baseline FS</span>
-                      <span className="font-mono text-sm font-semibold text-terra-ivory">
-                        {(selectedParcel.baseline_fs ?? selectedParcel.fs_baseline_mean)?.toFixed(3) || '—'}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-terra-deep/40 border border-terra-border/30">
-                      <span className="text-terra-slate block mb-1">Stability Gain (&Delta;FS)</span>
-                      <span className="font-mono text-sm font-semibold text-emerald-400">
-                        {getDeltaFs(selectedParcel) > 0 ? `+${getDeltaFs(selectedParcel).toFixed(3)}` : '—'}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-terra-deep/40 border border-terra-border/30">
+                  <div className="grid grid-cols-2 gap-2.5 text-xs">
+                    <div className="p-3 rounded-xl bg-terra-deep/50 border border-terra-border/30">
                       <span className="text-terra-slate block mb-1">Plantable Area</span>
                       <span className="font-mono text-sm font-semibold text-terra-ivory">
                         {getAreaHa(selectedParcel).toFixed(2)} ha
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-terra-deep/40 border border-terra-border/30">
+                    <div className="p-3 rounded-xl bg-terra-deep/50 border border-terra-border/30">
+                      <span className="text-terra-slate block mb-1">Modeled Stability Gain</span>
+                      <span className="font-mono text-sm font-semibold text-emerald-400">
+                        {getDeltaFs(selectedParcel) > 0 ? `+${getDeltaFs(selectedParcel).toFixed(2)} ΔFS` : '—'}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-terra-deep/50 border border-terra-border/30">
+                      <span className="text-terra-slate block mb-1">Baseline Stability</span>
+                      <span className="font-mono text-sm font-semibold text-terra-ivory">
+                        {(selectedParcel.baseline_fs ?? selectedParcel.fs_baseline_mean)?.toFixed(2) || '—'}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-terra-deep/50 border border-terra-border/30">
                       <span className="text-terra-slate block mb-1">Mean Slope</span>
                       <span className="font-mono text-sm font-semibold text-terra-ivory">
                         {selectedParcel.slope_mean_deg !== undefined ? `${selectedParcel.slope_mean_deg.toFixed(1)}°` : '—'}
@@ -604,25 +613,46 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                   </div>
                 </div>
 
-                {/* Scientific Disclaimer Note */}
+                {/* Expandable Technical Diagnostics */}
+                <div className="rounded-xl border border-terra-border/30 bg-terra-deep/30 overflow-hidden mb-5">
+                  <button
+                    type="button"
+                    onClick={() => setIsTechDetailsOpen(!isTechDetailsOpen)}
+                    className="w-full px-4 py-2.5 flex items-center justify-between text-xs text-terra-muted hover:text-terra-ivory font-mono transition"
+                  >
+                    <span>Technical Zonal Diagnostics</span>
+                    {isTechDetailsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {isTechDetailsOpen && (
+                    <div className="p-4 border-t border-terra-border/20 space-y-1.5 text-[11px] font-mono text-terra-slate">
+                      <div>Baseline FS (FS₀): {(selectedParcel.baseline_fs ?? selectedParcel.fs_baseline_mean)?.toFixed(3) || 'N/A'}</div>
+                      <div>Reinforced FS: {selectedParcel.reinforced_fs !== undefined ? selectedParcel.reinforced_fs.toFixed(3) : 'N/A'}</div>
+                      <div>Modeled ΔFS: {getDeltaFs(selectedParcel) > 0 ? `+${getDeltaFs(selectedParcel).toFixed(3)}` : 'N/A'}</div>
+                      <div>Mean Slope: {selectedParcel.slope_mean_deg !== undefined ? `${selectedParcel.slope_mean_deg.toFixed(2)}°` : 'N/A'}</div>
+                      <div>Sapling Estimate: {selectedParcel.estimated_required_stems ? `${Math.round(selectedParcel.estimated_required_stems).toLocaleString()} stems` : 'N/A'}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Scientific Advisory Note */}
                 <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200/90 text-xs leading-relaxed">
                   <div className="flex items-center gap-1.5 font-semibold mb-1 text-amber-300">
                     <ShieldAlert className="w-3.5 h-3.5" />
-                    Engineering Advisory
+                    Decision Support Advisory
                   </div>
-                  Outputs are calculated using a 1D infinite slope equilibrium formulation. Ground-truth
-                  geotechnical boreholes and site investigations are required prior to engineering works.
+                  Values represent modeled limit-equilibrium potential based on available remote sensing. Site geotechnical borehole calibration is required prior to ground engineering.
                 </div>
               </div>
 
               {/* Drawer Footer Actions */}
-              <div className="pt-6 border-t border-terra-border/40 mt-6 flex gap-3">
+              <div className="pt-4 border-t border-terra-border/40 mt-4">
                 <button
                   onClick={onNavigateToMap}
-                  className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition text-center shadow-lg shadow-terra-mint/10 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition text-center shadow-lg shadow-terra-mint/10 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Compass className="w-4 h-4" />
-                  View on Geospatial Map
+                  <span>Inspect Location on Geospatial Map</span>
                 </button>
               </div>
             </motion.div>
@@ -632,3 +662,5 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
     </div>
   );
 };
+
+export default ResultsView;

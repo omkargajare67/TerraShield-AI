@@ -39,7 +39,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // Free OpenStreetMap Tiles
+      // OpenStreetMap Tiles
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
       }).addTo(map);
@@ -48,6 +48,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     }
 
     const map = mapInstanceRef.current;
+
+    // Invalidate size on load / render to prevent tile clipping
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
 
     // 1. Render Boundary Layer if present
     if (layersRef.current.boundaryLayer) {
@@ -118,14 +123,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               fillColor: '#2f855a',
               color: '#1c4532',
               weight: 2.5,
-              fillOpacity: 0.80,
+              fillOpacity: 0.85,
             };
           } else if (rank && rank <= 5) {
             return {
               fillColor: '#48bb78',
               color: '#276749',
               weight: 2,
-              fillOpacity: 0.65,
+              fillOpacity: 0.70,
             };
           } else if (rank) {
             return {
@@ -147,7 +152,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           const props = feature.properties || {};
           const pid = props.parcel_id || feature.id || 'N/A';
           const rankText = props.rank ? `Rank #${props.rank}` : 'Unranked';
-          const scoreText = props.priority_score_index !== undefined ? `${props.priority_score_index.toFixed(1)}/100` : (props.demo_leverage_score || 'N/A');
+          const scoreText = props.priority_score_index !== undefined ? `${props.priority_score_index.toFixed(1)}%` : (props.demo_leverage_score || 'N/A');
           const areaText = props.plantable_area_ha ? `${props.plantable_area_ha.toFixed(2)} ha` : `${props.total_area_ha || props.area_hectares || 'N/A'} ha`;
 
           // Tooltip
@@ -164,9 +169,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               <div><b>Priority Score:</b> ${scoreText}</div>
               <div><b>Plantable Area:</b> ${areaText}</div>
               <div><b>Hillslope Mean:</b> ${props.slope_mean_deg ? props.slope_mean_deg.toFixed(1) + '°' : 'N/A'}</div>
-              <div><b>Baseline FS:</b> ${props.fs_baseline_mean ? props.fs_baseline_mean.toFixed(2) : 'N/A'}</div>
-              <div><b>Modeled ΔFS:</b> +${props.fs_delta_mean ? props.fs_delta_mean.toFixed(2) : 'N/A'}</div>
-              <div><b>Primary Driver:</b> ${props.primary_driver || 'Baseline Balance'}</div>
+              <div><b>Baseline Stability (FS₀):</b> ${props.fs_baseline_mean ? props.fs_baseline_mean.toFixed(2) : 'N/A'}</div>
+              <div><b>Modeled ΔFS Gain:</b> +${props.fs_delta_mean ? props.fs_delta_mean.toFixed(2) : 'N/A'}</div>
+              <div><b>Driver:</b> ${props.primary_driver || 'Stability Gain'}</div>
             </div>
             `,
             { maxWidth: 260 }
@@ -201,41 +206,47 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         console.warn('Could not fit bounds on boundary layer:', e);
       }
     }
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [parcelsGeojson, boundaryGeojson, selectedParcelId, onSelectParcel]);
 
   return (
-    <div className={`relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm ${className}`} style={{ height }}>
+    <div className={`relative w-full rounded-2xl overflow-hidden border border-terra-border/50 shadow-md ${className}`} style={{ height }}>
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Floating Legend */}
-      <div className="absolute bottom-4 right-4 z-[400] glass-card px-3.5 py-2.5 rounded-xl text-xs text-slate-700 font-sans shadow-lg pointer-events-auto">
-        <div className="font-bold text-forest-900 text-xs mb-1.5 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-forest-700 animate-pulse" />
-          Parcel Priority Legend
+      <div className="absolute bottom-4 right-4 z-[400] bg-terra-deep/90 border border-terra-border/80 backdrop-blur-md px-3.5 py-2.5 rounded-xl text-xs text-terra-ivory font-sans shadow-xl pointer-events-auto max-w-[220px]">
+        <div className="font-bold text-terra-mint text-xs mb-1.5 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-terra-mint animate-pulse" />
+          Restoration Priority Legend
         </div>
-        <div className="space-y-1">
+        <div className="space-y-1.5 text-[11px]">
           <div className="flex items-center gap-2">
-            <span className="w-3.5 h-3.5 rounded-sm bg-[#2f855a] border border-[#1c4532]" />
-            <span className="font-semibold text-slate-900">Rank #1 (Highest)</span>
+            <span className="w-3.5 h-3.5 rounded-sm bg-[#2f855a] border border-[#1c4532] shrink-0" />
+            <span className="font-semibold text-terra-ivory">Rank #1 (Top Priority)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3.5 h-3.5 rounded-sm bg-[#48bb78] border border-[#276749]" />
-            <span>Top Tier (Ranks 2–5)</span>
+            <span className="w-3.5 h-3.5 rounded-sm bg-[#48bb78] border border-[#276749] shrink-0" />
+            <span className="text-terra-muted">Top Tier (Ranks 2–5)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3.5 h-3.5 rounded-sm bg-[#68d391] border border-[#2f855a]" />
-            <span>Eligible Candidate</span>
+            <span className="w-3.5 h-3.5 rounded-sm bg-[#68d391] border border-[#2f855a] shrink-0" />
+            <span className="text-terra-muted">Eligible Candidate</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3.5 h-3.5 rounded-sm bg-[#a0aec0] border border-[#718096] border-dashed" />
-            <span className="text-slate-500">Excluded (Slope/Reserve)</span>
+            <span className="w-3.5 h-3.5 rounded-sm bg-[#a0aec0] border border-[#718096] border-dashed shrink-0" />
+            <span className="text-terra-slate">Excluded (Slope/Mask)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3.5 h-3.5 rounded-sm bg-[#f59e0b] border border-[#b45309]" />
-            <span className="text-amber-700">Insufficient Data</span>
+            <span className="w-3.5 h-3.5 rounded-sm bg-[#f59e0b] border border-[#b45309] shrink-0" />
+            <span className="text-amber-300">Insufficient Data</span>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+export default MapCanvas;

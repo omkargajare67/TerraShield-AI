@@ -7,6 +7,7 @@ import {
 import { api } from '../api/client';
 import type { ProjectMetadata } from '../api/types';
 import { ProvenanceBanner } from '../components/common/ProvenanceBanner';
+import { HelpTooltip } from '../components/common/HelpTooltip';
 
 interface GeotechnicalStudioViewProps {
   activeProject: ProjectMetadata | null;
@@ -273,7 +274,10 @@ export const GeotechnicalStudioView: React.FC<GeotechnicalStudioViewProps> = ({
             {/* Effective Cohesion c' */}
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-terra-muted">Effective Cohesion (c')</span>
+                <span className="text-terra-muted flex items-center gap-1">
+                  <span>Effective Cohesion (c')</span>
+                  <HelpTooltip term="Cohesion (c')" text="Electrostatic and particle cementation bonding resisting shear along the sliding plane." />
+                </span>
                 <span className="font-mono text-terra-mint font-semibold">{cohesion.toFixed(1)} kPa</span>
               </div>
               <input
@@ -291,7 +295,10 @@ export const GeotechnicalStudioView: React.FC<GeotechnicalStudioViewProps> = ({
             {/* Internal Friction Angle phi' */}
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-terra-muted">Internal Friction Angle (&phi;')</span>
+                <span className="text-terra-muted flex items-center gap-1">
+                  <span>Internal Friction Angle (&phi;')</span>
+                  <HelpTooltip term="Friction Angle (φ')" text="Inter-granular friction resisting shear displacement between soil grains." />
+                </span>
                 <span className="font-mono text-terra-mint font-semibold">{frictionAngle.toFixed(1)}&deg;</span>
               </div>
               <input
@@ -309,7 +316,10 @@ export const GeotechnicalStudioView: React.FC<GeotechnicalStudioViewProps> = ({
             {/* Unit Weight gamma */}
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-terra-muted">Bulk Unit Weight (&gamma;)</span>
+                <span className="text-terra-muted flex items-center gap-1">
+                  <span>Bulk Unit Weight (&gamma;)</span>
+                  <HelpTooltip term="Unit Weight (γ)" text="Bulk density of the regolith column exerting gravitational driving force." />
+                </span>
                 <span className="font-mono text-terra-mint font-semibold">{unitWeight.toFixed(1)} kN/m&sup3;</span>
               </div>
               <input
@@ -326,7 +336,10 @@ export const GeotechnicalStudioView: React.FC<GeotechnicalStudioViewProps> = ({
             {/* Shear Plane Depth z */}
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-terra-muted">Regolith Depth to Failure Plane (z)</span>
+                <span className="text-terra-muted flex items-center gap-1">
+                  <span>Regolith Depth to Failure Plane (z)</span>
+                  <HelpTooltip term="Soil Depth (z)" text="Distance from ground surface to the potential translational failure slip surface." />
+                </span>
                 <span className="font-mono text-terra-mint font-semibold">{depth.toFixed(1)} m</span>
               </div>
               <input
@@ -343,7 +356,10 @@ export const GeotechnicalStudioView: React.FC<GeotechnicalStudioViewProps> = ({
             {/* Water Table Ratio m */}
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-terra-muted">Water Table Saturation Ratio (m = h_w / z)</span>
+                <span className="text-terra-muted flex items-center gap-1">
+                  <span>Water Table Saturation Ratio (m = h_w / z)</span>
+                  <HelpTooltip term="Saturation Ratio (m)" text="Fraction of soil column saturated with groundwater (0% = dry, 100% = perched water table at ground surface)." />
+                </span>
                 <span className="font-mono text-terra-mint font-semibold">{(waterTableRatio * 100).toFixed(0)}%</span>
               </div>
               <input
@@ -361,7 +377,10 @@ export const GeotechnicalStudioView: React.FC<GeotechnicalStudioViewProps> = ({
             {/* Root Additional Cohesion c_root */}
             <div className="pt-2 border-t border-terra-border/30">
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-terra-ivory font-semibold">Bio-Engineered Root Cohesion (c_root)</span>
+                <span className="text-terra-ivory font-semibold flex items-center gap-1">
+                  <span>Bio-Engineered Root Cohesion (c_root)</span>
+                  <HelpTooltip term="Root Cohesion (c_root)" text="Additional shear strength provided by vegetative root fibers crossing the potential slip surface." />
+                </span>
                 <span className="font-mono text-emerald-400 font-bold">{rootCohesion.toFixed(1)} kPa</span>
               </div>
               <input
