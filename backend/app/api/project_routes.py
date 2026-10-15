@@ -3,6 +3,7 @@
 import json
 import shutil
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
@@ -72,6 +73,180 @@ def create_project(req: CreateProjectRequest) -> ProjectMetadata:
         geotech_preset_id=req.geotech_preset_id,
     )
 
+
+# -------------------------------------------------------------------------
+# Automatic Geospatial Data Acquisition & One-Click Analysis Endpoints
+# (Must be registered BEFORE parameterized /{project_id} to avoid route masking)
+# -------------------------------------------------------------------------
+
+class ValidateAOIRequest(BaseModel):
+    bounds: Optional[Dict[str, float]] = None
+    boundary_geojson: Optional[Dict[str, Any]] = None
+
+
+class AutoAnalyzeRequest(BaseModel):
+    name: Optional[str] = None
+    project_id: Optional[str] = None
+    bounds: Optional[Dict[str, float]] = None
+    boundary_geojson: Optional[Dict[str, Any]] = None
+    geotech_preset_id: str = "wayanad_saprolite"
+    cell_size_m: float = 250.0
+    priority_preset: str = "balanced"
+    async_job: bool = True
+
+
+@router.post("/validate-aoi", summary="Validate Area of Interest Boundary & Metric Acreage")
+@router.post("/validate-aoi/", include_in_schema=False)
+def validate_study_area(req: ValidateAOIRequest) -> Dict[str, Any]:
+    """Validate AOI geometry, topology, coordinate ranges, and metric geodesic area."""
+    from backend.app.core.geospatial.acquisition import validate_aoi
+    try:
+        return validate_aoi(boundary_geojson=req.boundary_geojson, bounds=req.bounds)
+    except Exception as err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(err),
+        )
+
+
+@router.get("/auto-analyze", summary="Auto-Analyze Info")
+@router.get("/auto-analyze/", include_in_schema=False)
+def auto_analyze_info() -> Dict[str, Any]:
+    """Information endpoint for automated location analysis."""
+    return {
+        "status": "ready",
+        "methods_supported": ["POST"],
+        "description": "Send a POST request with boundary_geojson or bounds to trigger automatic geospatial analysis.",
+    }
+
+
+@router.post("/auto-analyze", summary="One-Click Automatic Geospatial Acquisition & Analysis")
+@router.post("/auto-analyze/", include_in_schema=False)
+def auto_analyze_location(req: AutoAnalyzeRequest) -> Dict[str, Any]:
+    """Discover, download, and analyze public geospatial data for a selected location.
+
+    Supports both asynchronous background execution (with real-time progress polling)
+    and synchronous execution.
+    """
+    import threading
+    from backend.app.core.geospatial.acquisition import (
+        ACTIVE_JOBS,
+        run_auto_acquisition_pipeline,
+        validate_aoi,
+    )
+
+    # Validate inputs first
+    try:
+        aoi_report = validate_aoi(boundary_geojson=req.boundary_geojson, bounds=req.bounds)
+    except Exception as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+
+    # Resolve or create project
+    if req.project_id:
+        proj = ProjectService.get_project(req.project_id)
+        if not proj:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Project '{req.project_id}' not found.")
+        target_project_id = req.project_id
+    else:
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+        proj_name = req.name.strip() if req.name and req.name.strip() else f"Auto Analysis ({now_str})"
+        created = ProjectService.create_project(
+            name=proj_name,
+            description="Automated analysis workspace with satellite and DEM data.",
+            study_area_type="polygon_draw" if req.boundary_geojson else "bbox",
+            bounds=aoi_report["bounds"],
+            boundary_geojson=aoi_report["boundary_geojson"],
+            geotech_preset_id=req.geotech_preset_id,
+        )
+        target_project_id = created.id
+
+    if not req.async_job:
+        # Run synchronously
+        try:
+            res = run_auto_acquisition_pipeline(
+                project_id=target_project_id,
+                boundary_geojson=aoi_report["boundary_geojson"],
+                bounds=aoi_report["bounds"],
+                cell_size_m=req.cell_size_m,
+                priority_preset=req.priority_preset,
+            )
+            return res
+        except Exception as err:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Automated analysis failed: {str(err)}",
+            )
+
+    # Asynchronous job with background progress tracking
+    job_id = uuid.uuid4().hex[:12]
+    ACTIVE_JOBS[job_id] = {
+        "job_id": job_id,
+        "status": "RUNNING",
+        "stage_number": 1,
+        "stage_title": "Validating selected area",
+        "stage_message": "Verifying coordinates, topology, and study area size...",
+        "project_id": target_project_id,
+        "result": None,
+        "error": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    def _worker():
+        def _prog_cb(step: int, title: str, msg: str):
+            if job_id in ACTIVE_JOBS:
+                ACTIVE_JOBS[job_id]["stage_number"] = step
+                ACTIVE_JOBS[job_id]["stage_title"] = title
+                ACTIVE_JOBS[job_id]["stage_message"] = msg
+
+        try:
+            res = run_auto_acquisition_pipeline(
+                project_id=target_project_id,
+                boundary_geojson=aoi_report["boundary_geojson"],
+                bounds=aoi_report["bounds"],
+                cell_size_m=req.cell_size_m,
+                priority_preset=req.priority_preset,
+                progress_callback=_prog_cb,
+            )
+            ACTIVE_JOBS[job_id]["status"] = "COMPLETED"
+            ACTIVE_JOBS[job_id]["result"] = res
+            ACTIVE_JOBS[job_id]["stage_number"] = 9
+            ACTIVE_JOBS[job_id]["stage_title"] = "Analysis Completed"
+            ACTIVE_JOBS[job_id]["stage_message"] = "Geospatial acquisition and parcel ranking completed successfully."
+        except Exception as exc:
+            ACTIVE_JOBS[job_id]["status"] = "FAILED"
+            ACTIVE_JOBS[job_id]["error"] = str(exc)
+            ACTIVE_JOBS[job_id]["stage_title"] = "Analysis Failed"
+            ACTIVE_JOBS[job_id]["stage_message"] = str(exc)
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+    return {
+        "job_id": job_id,
+        "status": "STARTED",
+        "project_id": target_project_id,
+        "area_ha": aoi_report["area_ha"],
+        "bounds": aoi_report["bounds"],
+        "message": "Automated geospatial acquisition and analysis job started.",
+    }
+
+
+@router.get("/auto-analyze/status/{job_id}", summary="Check Auto-Analyze Job Progress")
+@router.get("/auto-analyze/status/{job_id}/", include_in_schema=False)
+def get_auto_analyze_status(job_id: str) -> Dict[str, Any]:
+    """Retrieve the current progress stage and result of an automated analysis job."""
+    from backend.app.core.geospatial.acquisition import ACTIVE_JOBS
+    job = ACTIVE_JOBS.get(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Analysis job '{job_id}' not found.",
+        )
+    return job
+
+
+# -------------------------------------------------------------------------
+# Parameterized Project Workspace Endpoints
+# -------------------------------------------------------------------------
 
 @router.get("/{project_id}", response_model=ProjectMetadata, summary="Get Project Details")
 def get_project(project_id: str) -> ProjectMetadata:
@@ -268,14 +443,17 @@ def process_project_terrain(project_id: str) -> Dict[str, Any]:
     dem_path = Path(dem_entry["path"])
     res = process_dem_terrain(dem_path)
 
+    slope_file = settings.ARTIFACTS_DIR / res.slope_raster_id
+    aspect_file = settings.ARTIFACTS_DIR / res.aspect_raster_id
+
     # Attach slope and aspect to project
     project.layers["slope"] = {
-        "path": res.slope_geotiff_path,
+        "path": str(slope_file),
         "status": "DERIVED_GEOSPATIAL",
         "description": f"Derived slope raster from {dem_path.name}",
     }
     project.layers["aspect"] = {
-        "path": res.aspect_geotiff_path,
+        "path": str(aspect_file),
         "status": "DERIVED_GEOSPATIAL",
         "description": f"Derived aspect raster from {dem_path.name}",
     }
@@ -315,16 +493,21 @@ def process_project_geotechnical(project_id: str) -> Dict[str, Any]:
     root_dict = gp.get("root", {})
     target_fs = float(gp.get("target_fs", 1.3))
 
+    depth_val = float(soil_dict.get("depth_m", soil_dict.get("z_m", 1.8)))
+    gamma_val = float(soil_dict.get("gamma_kn_m3", 18.5))
+    m_ratio = float(soil_dict.get("m_water_table", 0.5))
+    u_val = float(soil_dict.get("u_kpa", m_ratio * 9.81 * depth_val))
+
     soil = SoilParameters(
         c_prime_kpa=float(soil_dict.get("c_prime_kpa", 8.0)),
-        phi_deg=float(soil_dict.get("phi_deg", 26.0)),
-        gamma_kn_m3=float(soil_dict.get("gamma_kn_m3", 18.5)),
-        depth_m=float(soil_dict.get("depth_m", 1.8)),
-        m_water_table=float(soil_dict.get("m_water_table", 0.5)),
+        phi_prime_deg=float(soil_dict.get("phi_deg", soil_dict.get("phi_prime_deg", 26.0))),
+        gamma_kn_m3=gamma_val,
+        z_m=depth_val,
+        u_kpa=u_val,
     )
     root = RootParameters(
-        tensile_stress_kpa=float(root_dict.get("tensile_stress_kpa", 25000.0)),
-        rar=float(root_dict.get("rar", 0.002)),
+        tensile_stress_input=float(root_dict.get("tensile_stress_kpa", root_dict.get("tensile_stress_input", 25000.0))),
+        root_area_ratio=float(root_dict.get("rar", root_dict.get("root_area_ratio", 0.002))),
         k_factor=float(root_dict.get("k_factor", 1.2)),
     )
 
@@ -342,28 +525,27 @@ def process_project_geotechnical(project_id: str) -> Dict[str, Any]:
         )
 
     # Attach geotechnical rasters to project
-    geotech_layers = {
-        "fs_baseline": geo_res.output_rasters.get("fs_baseline"),
-        "fs_reinforced": geo_res.output_rasters.get("fs_reinforced"),
-        "fs_delta": geo_res.output_rasters.get("fs_delta"),
-        "required_cohesion": geo_res.output_rasters.get("required_cohesion"),
-    }
-    for k, v in geotech_layers.items():
-        if v:
+    art_rasters = geo_res.get("artifacts", {}).get("rasters", {})
+    for k in ["fs_baseline", "fs_reinforced", "fs_delta", "required_cohesion"]:
+        fname = art_rasters.get(k)
+        if fname:
+            src_art = settings.ARTIFACTS_DIR / fname
             project.layers[k] = {
-                "path": v,
+                "path": str(src_art),
                 "status": "ILLUSTRATIVE_SCENARIO" if gp.get("is_demo_parameters", False) else "DERIVED_GEOTECHNICAL",
                 "description": f"Geotechnical {k} raster",
             }
 
     ProjectService.update_project(project)
 
+    stats = geo_res.get("statistics", {})
     return {
         "message": "Geotechnical raster analysis completed successfully.",
-        "run_id": geo_res.run_id,
-        "delta_c_kpa": geo_res.root_cohesion_delta_c_kpa,
-        "baseline_summary": geo_res.fs_baseline_summary.model_dump(),
-        "reinforced_summary": geo_res.fs_reinforced_summary.model_dump(),
-        "required_cohesion_summary": geo_res.required_cohesion_summary.model_dump(),
-        "output_rasters": geo_res.output_rasters,
+        "run_id": geo_res.get("run_id"),
+        "delta_c_kpa": geo_res.get("scenario_assumptions", {}).get("root", {}).get("modeled_delta_c_kpa", 0.0),
+        "baseline_summary": stats.get("baseline_fs", {}),
+        "reinforced_summary": stats.get("reinforced_fs", {}),
+        "required_cohesion_summary": stats.get("required_cohesion_kpa", {}),
+        "output_rasters": art_rasters,
     }
+

@@ -220,20 +220,29 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
     from backend.app.core.projects.project_service import ProjectService
     proj = ProjectService.get_project(req.project_id) if req.project_id else None
 
-    # Resolve layers: project overrides > custom layers > default Wayanad
-    layers = _get_active_layer_paths()
-    if proj:
+    # Resolve layers: project overrides > custom layers > default Wayanad (only for builtin demo)
+    if proj and not proj.is_builtin:
+        layers: Dict[str, Path] = {}
         for k in ["dem", "slope", "aspect", "ndvi", "fs_baseline", "fs_reinforced", "fs_delta", "required_cohesion", "tree_density"]:
             if k in proj.layers and proj.layers[k].get("path"):
                 p_cand = Path(proj.layers[k]["path"])
                 if p_cand.exists():
                     layers[k] = p_cand
+    else:
+        layers = _get_active_layer_paths()
+        if proj:
+            for k in ["dem", "slope", "aspect", "ndvi", "fs_baseline", "fs_reinforced", "fs_delta", "required_cohesion", "tree_density"]:
+                if k in proj.layers and proj.layers[k].get("path"):
+                    p_cand = Path(proj.layers[k]["path"])
+                    if p_cand.exists():
+                        layers[k] = p_cand
+
     if req.custom_layers:
         for k, v in req.custom_layers.items():
             if v and Path(v).exists():
                 layers[k] = Path(v)
 
-    if not layers["slope"].exists():
+    if "slope" not in layers or not layers["slope"].exists():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
@@ -281,16 +290,16 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
         except Exception:
             pass
 
-    # 2. Open raster contexts
-    dem_ctx = RasterLayerContext(layers["dem"]) if layers["dem"].exists() else None
+    # 2. Open raster contexts safely
+    dem_ctx = RasterLayerContext(layers["dem"]) if "dem" in layers and layers["dem"].exists() else None
     slope_ctx = RasterLayerContext(layers["slope"])
-    aspect_ctx = RasterLayerContext(layers["aspect"]) if layers["aspect"].exists() else None
-    ndvi_ctx = RasterLayerContext(layers["ndvi"]) if layers["ndvi"].exists() else None
-    fs_base_ctx = RasterLayerContext(layers["fs_baseline"]) if layers["fs_baseline"].exists() else None
-    fs_reinf_ctx = RasterLayerContext(layers["fs_reinforced"]) if layers["fs_reinforced"].exists() else None
-    fs_delta_ctx = RasterLayerContext(layers["fs_delta"]) if layers["fs_delta"].exists() else None
-    req_c_ctx = RasterLayerContext(layers["required_cohesion"]) if layers["required_cohesion"].exists() else None
-    tree_d_ctx = RasterLayerContext(layers["tree_density"]) if layers["tree_density"].exists() else None
+    aspect_ctx = RasterLayerContext(layers["aspect"]) if "aspect" in layers and layers["aspect"].exists() else None
+    ndvi_ctx = RasterLayerContext(layers["ndvi"]) if "ndvi" in layers and layers["ndvi"].exists() else None
+    fs_base_ctx = RasterLayerContext(layers["fs_baseline"]) if "fs_baseline" in layers and layers["fs_baseline"].exists() else None
+    fs_reinf_ctx = RasterLayerContext(layers["fs_reinforced"]) if "fs_reinforced" in layers and layers["fs_reinforced"].exists() else None
+    fs_delta_ctx = RasterLayerContext(layers["fs_delta"]) if "fs_delta" in layers and layers["fs_delta"].exists() else None
+    req_c_ctx = RasterLayerContext(layers["required_cohesion"]) if "required_cohesion" in layers and layers["required_cohesion"].exists() else None
+    tree_d_ctx = RasterLayerContext(layers["tree_density"]) if "tree_density" in layers and layers["tree_density"].exists() else None
 
     # 3. Configure eligibility engine
     el_cfg_in = req.eligibility_settings

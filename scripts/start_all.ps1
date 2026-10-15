@@ -24,22 +24,29 @@ if (-not (Test-Path $VenvPython)) {
     exit 1
 }
 
-# 2. Port Conflict Checks
+# 2. Port Conflict Checks & Process Management
 function Test-PortInUse($Port) {
     $connections = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
     return ($connections -ne $null)
 }
 
 if (Test-PortInUse 8000) {
-    Write-Host "[NOTICE] Port 8000 is already in use (FastAPI backend may already be running)." -ForegroundColor Yellow
+    Write-Host "[NOTICE] Port 8000 is already in use. Terminating stale backend process to reload latest routes..." -ForegroundColor Yellow
+    $stalePids = (Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue).OwningProcess | Select-Object -Unique
+    foreach ($p in $stalePids) {
+        if ($p -and $p -ne 0) {
+            Stop-Process -Id $p -Force -ErrorAction SilentlyContinue
+        }
+    }
+    Start-Sleep -Milliseconds 500
 }
 if (Test-PortInUse 5173) {
     Write-Host "[NOTICE] Port 5173 is already in use (Vite dev server may already be running)." -ForegroundColor Yellow
 }
 
 # 3. Launch Backend Process
-Write-Host "[1/2] Starting FastAPI Backend on http://127.0.0.1:8000..." -ForegroundColor Cyan
-$BackendProcess = Start-Process -FilePath $VenvPython -ArgumentList "-m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000" -WorkingDirectory $ProjectRoot -PassThru
+Write-Host "[1/2] Starting FastAPI Backend on http://127.0.0.1:8000 (with hot reload)..." -ForegroundColor Cyan
+$BackendProcess = Start-Process -FilePath $VenvPython -ArgumentList "-m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload" -WorkingDirectory $ProjectRoot -PassThru
 
 # Wait for backend health
 $BackendReady = $false

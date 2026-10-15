@@ -5,20 +5,21 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20--%203.14-forestgreen.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.38+-FF4B4B.svg)](https://streamlit.io/)
-[![Release](https://img.shields.io/badge/Release-1.0.0%20(Production%20Build)-forestgreen.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-158%20Passing-brightgreen.svg)]()
+[![React 19](https://img.shields.io/badge/React-19.2+-61DAFB.svg)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8.3+-646CFF.svg)](https://vitejs.dev/)
+[![Release](https://img.shields.io/badge/Release-1.2.0%20(One--Click%20Auto--Acquisition)-forestgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-175%20Passing-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/License-Proprietary%20%2F%20Research-lightgrey.svg)]()
 
 ---
 
 > **⚠️ Scientific Integrity & Geotechnical Disclaimer**  
-> Geotechnical stability outputs and Factor of Safety ($FS$) calculations in TerraShield AI are **exploratory limit-equilibrium benchmark scenario models**. They do **NOT** represent site-specific borehole measurements, certified geotechnical engineering predictions, or statutory planting mandates.  
+> Geotechnical stability outputs and Factor of Safety ($FS$) calculations in TerraShield AI are **exploratory limit-equilibrium benchmark scenario models** (Infinite Slope + simplified Wu–Waldron root-cohesion). They do **NOT** represent site-specific borehole measurements, certified geotechnical engineering predictions, or statutory planting mandates.  
 > Official legal forest reserve boundaries remain **unverified** pending state cadastral boundary datasets. Species recommendations remain **pending curated botanical data**.
 
 ---
 
-## 1. Project Overview & Generalized Multi-Study Area Scope
+## 1. Project Overview: One-Click Location Analysis & Auto-Acquisition
 
 TerraShield AI is an integrated geospatial and geotechnical decision-support system designed to identify high-impact reforestation sites and evaluate potential slope-stabilization benefits:
 
@@ -26,13 +27,18 @@ TerraShield AI is an integrated geospatial and geotechnical decision-support sys
 2. **Air-Quality Buffers:** Spatial planning for vegetative particulate capture.
 3. **Urban-Heat Mitigation:** Canopy density evaluation for urban heat alleviation.
 
-### Generalized Beyond Wayanad
-While originally piloted in the **Wayanad Watershed (Western Ghats, Kerala)**, TerraShield AI is fully generalized across geographic study areas and custom user datasets:
-- **User-Defined Study Areas:** Define areas via interactive map, bounding box, uploaded GeoJSON polygons, zipped ESRI Shapefile archives (`.zip`), or OGC GeoPackages (`.gpkg`).
-- **Automatic CRS Handling:** Detects source coordinate reference systems (e.g. UTM Zone 43N, Web Mercator) and reprojects to WGS 84 (`EPSG:4326`) with transparent audit notes.
-- **Custom Raster Ingestion:** Upload custom DEM GeoTIFFs, Sentinel-2 Red/NIR bands, or precomputed NDVI with automatic NoData, spatial resolution, and physical range validation.
-- **Physical Geotechnical Presets:** Configurable parameters for *Tropical Monsoon Saprolite*, *Colluvial Clay-Silt Hillslope*, *Residual Sandy Loam*, *Glacial Till*, or *Custom Engineering* values.
-- **Persistent Project Workspaces:** Save multiple study areas and analysis scenarios locally in `data/projects/<project_id>/` without losing previous run artifacts.
+### 🚀 NEW: Automatic Geospatial Data Acquisition (One-Click Analysis)
+Users no longer need to find, download, convert, or upload GIS rasters. The system provides an end-to-end autonomous pipeline:
+- **Interactive Map Selection:** Draw custom polygons or drag bounding boxes directly on the Leaflet map, or pick from high-risk corridor presets (Wayanad, Idukki, Munnar, Shimla, Joshimath).
+- **Automated Geometry Validation:** Validates WGS 84 bounds, checks coordinate ordering, and calculates ellipsoidal geodesic area ($1.0\text{ to }25,000\text{ ha}$).
+- **Zero-Key STAC Discovery:** Directly queries the **Microsoft Planetary Computer STAC Catalog** without requiring user API keys or subscriptions.
+- **Elevation Acquisition (DEM):** Automatically discovers and crops Copernicus 30m Global DEM (`cop-dem-glo-30`), with fallback to NASA SRTM 30m (`nasadem`). Validates elevation bounds, CRS, and land pixels.
+- **Multispectral Vegetation (Sentinel-2 L2A):** Searches recent low-cloud Sentinel-2 scenes, fetches Red (B04) and Near-Infrared (B08) rasters, and calculates continuous NDVI with zero-denominator & cloud-mask protections. (Falls back to reduced-data terrain-only analysis if satellite imagery is unavailable).
+- **Automated Terrain Derivation:** Computes slope and aspect in-memory using localized Horn's finite-difference method with latitude-aware linear distance scaling.
+- **Limit-Equilibrium Geotechnical Solver:** Solves baseline Factor of Safety ($FS_{base}$), root-reinforced Factor of Safety ($FS_{reinf}$), $\Delta FS$, and required stabilizing root cohesion ($c_{r,\text{req}}$).
+- **Candidate Parcel Tessellation & Multi-Criteria Ranking:** Generates candidate stabilization parcels, applies slope and reserve eligibility rules, scores parcels via multi-objective weighting, and produces interactive GeoJSON layers.
+- **Isolated Project Workspace:** Each run creates a dedicated workspace in `data/projects/<project_id>/` with independent rasters, parcel GeoJSON, acquisition provenance, and run logs without overwriting previous projects.
+- **Preserved Benchmark:** The preloaded **Wayanad Watershed Pilot** remains fully available as an instant offline benchmark.
 
 ### Verified Pilot Study Dataset: Wayanad Watershed (Kerala, India)
 - **Pilot Study Area:** Wayanad Watershed, Western Ghats, Kerala, India (`11.55° N – 11.65° N`, `76.00° E – 76.10° E`).
@@ -112,13 +118,13 @@ pip install -r requirements.txt
 
 ### Option A: Unified Launcher (Single Command — Recommended)
 
-Start both FastAPI backend and Streamlit frontend concurrently with health verification:
+Start both FastAPI backend and modern React + Vite frontend concurrently with health verification:
 
 ```powershell
 .\scripts\start_all.ps1
 ```
 
-- **Interactive Dashboard:** `http://127.0.0.1:8501`
+- **Modern Interactive App:** `http://127.0.0.1:5173`
 - **Backend API:** `http://127.0.0.1:8000`
 - **Interactive Swagger Docs:** `http://127.0.0.1:8000/docs`
 
@@ -128,8 +134,9 @@ Start both FastAPI backend and Streamlit frontend concurrently with health verif
 # Terminal 1: Launch Backend API
 .\scripts\start_backend.ps1
 
-# Terminal 2: Launch Frontend Dashboard
-.\scripts\start_frontend.ps1
+# Terminal 2: Launch Frontend Application
+cd frontend
+npm run dev
 ```
 
 ---
@@ -140,11 +147,18 @@ Start both FastAPI backend and Streamlit frontend concurrently with health verif
 ```powershell
 .\scripts\run_tests.ps1
 ```
-Or directly:
+Or directly via pytest:
 ```powershell
 .\.venv\Scripts\pytest.exe -v
 ```
-**Verification Baseline:** **158 passed, 0 failed** in ~5.4 seconds. 100% offline reproducible.
+**Verification Baseline:** **175 passed, 0 failed** in ~13 seconds. Includes 17 comprehensive unit, integration, and offline-mocked tests in `backend/tests/test_auto_acquisition.py`. 100% offline reproducible without external network dependencies.
+
+### Frontend Quality Check & Build
+```powershell
+cd frontend
+npm run build
+```
+Vite production build succeeds in <1s with 0 TypeScript/bundler errors.
 
 
 ### Execute Operational Smoke Test

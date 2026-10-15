@@ -204,3 +204,4 @@ Evaluating the system across the four formal readiness dimensions:
 > The software platform, geospatial pipeline, geotechnical solver, recommendation engine, export generation, security controls, and local developer operations have **PASSED ALL FORMAL SOFTWARE VALIDATION REQUIREMENTS**.  
 >  
 > **Scientific Caveat:** In accordance with scientific integrity requirements, this release candidate is approved as a **Software Release Candidate for Decision Support**. It is **NOT** certified as an empirical geotechnical hazard prediction system. Field calibration and authoritative cadastral reserve data remain mandatory prerequisites before using outputs for civil engineering groundworks or statutory regulatory enforcement.
+++++++++++++++++++++++++++++++

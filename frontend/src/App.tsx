@@ -194,6 +194,8 @@ export function App() {
                   onSelectProject={(id) => setSelectedProjectId(id)}
                   onOpenResults={() => setActiveTab('results')}
                   onOpenCreateModal={() => setIsCreateModalOpen(true)}
+                  onAnalysisComplete={handleAnalysisComplete}
+                  onNavigateTab={(tab) => setActiveTab(tab as any)}
                 />
               </motion.div>
             )}

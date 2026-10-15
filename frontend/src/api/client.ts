@@ -25,10 +25,17 @@ class ApiClient {
         let message = `API Error (${response.status}): ${response.statusText}`;
         try {
           const json = JSON.parse(errText);
-          if (json.detail) message = json.detail;
+          if (json.detail) {
+            message = typeof json.detail === 'string' ? json.detail : JSON.stringify(json.detail);
+          }
         } catch {
           if (errText) message = errText;
         }
+
+        if (response.status === 405) {
+          message = `Method Not Allowed (HTTP 405) for ${url}. The server may be running an older build that requires a restart, or the route configuration does not support this HTTP method.`;
+        }
+
         throw new Error(message);
       }
       return (await response.json()) as T;
@@ -141,6 +148,45 @@ class ApiClient {
 
   async fetchArtifactJson(artifactId: string): Promise<any> {
     return this.request<any>(`/api/v1/recommendations/artifacts/${encodeURIComponent(artifactId)}`);
+  }
+
+  async validateAOI(payload: {
+    bounds?: { minx: number; miny: number; maxx: number; maxy: number };
+    boundary_geojson?: any;
+  }): Promise<{ is_valid: boolean; bounds: any; boundary_geojson: any; area_ha: number }> {
+    return this.request('/api/v1/projects/validate-aoi', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async autoAnalyze(payload: {
+    name?: string;
+    project_id?: string;
+    bounds?: { minx: number; miny: number; maxx: number; maxy: number };
+    boundary_geojson?: any;
+    geotech_preset_id?: string;
+    cell_size_m?: number;
+    priority_preset?: string;
+    async_job?: boolean;
+  }): Promise<any> {
+    return this.request('/api/v1/projects/auto-analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getAutoAnalyzeStatus(jobId: string): Promise<{
+    job_id: string;
+    status: 'RUNNING' | 'COMPLETED' | 'FAILED';
+    stage_number: number;
+    stage_title: string;
+    stage_message: string;
+    project_id?: string;
+    result?: any;
+    error?: string;
+  }> {
+    return this.request(`/api/v1/projects/auto-analyze/status/${encodeURIComponent(jobId)}`);
   }
 
   async getRunSummary(runId: string): Promise<RecommendationRunResponse> {
