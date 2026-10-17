@@ -18,19 +18,25 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   suffix = '',
   className = '',
 }) => {
-  const [displayValue, setDisplayValue] = useState(value);
+  const safeEnd = typeof value === 'number' && !isNaN(value) ? value : 0;
   const shouldReduceMotion = useReducedMotion();
+  const [displayValue, setDisplayValue] = useState<number>(safeEnd);
+  const prevValueRef = React.useRef(safeEnd);
 
   useEffect(() => {
     if (shouldReduceMotion) {
-      setDisplayValue(value);
+      prevValueRef.current = safeEnd;
       return;
     }
 
-    let start = displayValue;
-    const end = value;
+    const start = prevValueRef.current;
+    const end = safeEnd;
+    if (start === end) {
+      return;
+    }
     const startTime = performance.now();
 
+    let animId: number;
     const update = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
@@ -40,17 +46,20 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
       setDisplayValue(current);
 
       if (progress < 1) {
-        requestAnimationFrame(update);
+        animId = requestAnimationFrame(update);
       } else {
         setDisplayValue(end);
+        prevValueRef.current = end;
       }
     };
 
-    const animId = requestAnimationFrame(update);
+    animId = requestAnimationFrame(update);
     return () => cancelAnimationFrame(animId);
-  }, [value, duration, shouldReduceMotion]);
+  }, [safeEnd, duration, shouldReduceMotion]);
 
-  const formatted = displayValue.toLocaleString(undefined, {
+  const activeValue = shouldReduceMotion ? safeEnd : displayValue;
+  const numToFormat = typeof activeValue === 'number' && !isNaN(activeValue) ? activeValue : safeEnd;
+  const formatted = numToFormat.toLocaleString(undefined, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });

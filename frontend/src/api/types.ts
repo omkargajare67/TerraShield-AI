@@ -158,6 +158,8 @@ export interface RecommendationRunResponse {
     parcels_funded_count: number;
     total_stems_allocated: number;
   };
+  parcels_geojson?: any;
+  study_area_ha?: number;
 }
 
 export interface VectorReport {
@@ -176,3 +178,90 @@ export interface VectorReport {
   is_valid: boolean;
   validation_messages?: string[];
 }
+
+export interface CaseStudySourceReference {
+  title: string;
+  organization: string;
+  publication_year?: number;
+  url?: string;
+  document_type: string;
+  verification_notes?: string;
+}
+
+export interface CaseStudyDataset {
+  name: string;
+  provider: string;
+  resolution_m: number;
+  dataset_type: string;
+  status: string;
+  attribution: string;
+  access_url?: string;
+  notes?: string;
+}
+
+export interface CaseStudy {
+  id: string;
+  name: string;
+  country: string;
+  state_province: string;
+  district: string;
+  locality: string;
+  event_date: string;
+  disaster_type: string;
+  short_description: string;
+  region_tag: string;
+  temporal_tag: string;
+  analysis_mode: string;
+  verification_status: string;
+  readiness: string;
+  bounds: { minx: number; miny: number; maxx: number; maxy: number };
+  center: [number, number];
+  study_area_ha?: number;
+  study_area_geojson?: any;
+  geometry_provenance: string;
+  geometry_confidence: string;
+  source_references: CaseStudySourceReference[];
+  terrain_datasets: CaseStudyDataset[];
+  vegetation_datasets: CaseStudyDataset[];
+  observed_landslide_inventory?: any;
+  inventory_summary: string;
+  data_acquisition_requirements: string;
+  licensing_and_attribution: string;
+  known_limitations: string[];
+  suggested_geotech_preset: string;
+  suggested_cell_size_m: number;
+  linked_project_id?: string;
+}
+
+export interface LaunchWorkspaceResponse {
+  case_id: string;
+  project_id: string;
+  is_existing: boolean;
+  project: ProjectMetadata;
+  message: string;
+}
+
+export interface CaseStudyComparisonResult {
+  is_valid_comparison: boolean;
+  case_id?: string;
+  case_name?: string;
+  message?: string;
+  total_observed_features: number;
+  features_intersecting_grid: number;
+  features_in_modeled_concern_zone: number;
+  grid_intersection_percentage: number;
+  concern_zone_overlap_percentage: number;
+  concern_fs_threshold_used: number;
+  feature_details: Array<{
+    feature_name: string;
+    feature_type: string;
+    matched_parcel_ids: string[];
+    min_modeled_baseline_fs?: number | null;
+    within_stability_concern_zone: boolean;
+    disclaimer?: string;
+    note?: string;
+  }>;
+  scientific_integrity_notice: string;
+  limitations: string[];
+}
+

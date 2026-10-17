@@ -3,6 +3,9 @@ import type {
   RecommendationRunResponse,
   SystemHealth,
   VectorReport,
+  CaseStudy,
+  LaunchWorkspaceResponse,
+  CaseStudyComparisonResult,
 } from './types';
 
 export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
@@ -192,6 +195,58 @@ class ApiClient {
   async getRunSummary(runId: string): Promise<RecommendationRunResponse> {
     return this.request<RecommendationRunResponse>(`/api/v1/recommendations/runs/${encodeURIComponent(runId)}`);
   }
+
+  async getCaseStudies(region?: string, readiness?: string): Promise<CaseStudy[]> {
+    const params = new URLSearchParams();
+    if (region) params.append('region', region);
+    if (readiness) params.append('readiness', readiness);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<CaseStudy[]>(`/api/v1/case-studies${qs}`);
+  }
+
+  async getCaseStudy(caseId: string): Promise<CaseStudy> {
+    return this.request<CaseStudy>(`/api/v1/case-studies/${encodeURIComponent(caseId)}`);
+  }
+
+  async getCaseStudyObservedInventory(caseId: string): Promise<any> {
+    return this.request<any>(`/api/v1/case-studies/${encodeURIComponent(caseId)}/observed-inventory`);
+  }
+
+  async launchCaseStudyWorkspace(caseId: string): Promise<LaunchWorkspaceResponse> {
+    return this.request<LaunchWorkspaceResponse>(`/api/v1/case-studies/${encodeURIComponent(caseId)}/launch-workspace`, {
+      method: 'POST',
+    });
+  }
+
+  async compareCaseStudyResults(
+    caseId: string,
+    payload: { run_id?: string; parcels_geojson?: any; concern_fs_threshold?: number }
+  ): Promise<CaseStudyComparisonResult> {
+    return this.request<CaseStudyComparisonResult>(`/api/v1/case-studies/${encodeURIComponent(caseId)}/compare`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getRecommendationStatus(): Promise<any> {
+    return this.request<any>('/api/v1/recommendations/status');
+  }
+
+  async queryParcelSpecies(parcelId: string, elevationM?: number, slopeDeg?: number): Promise<any> {
+    const params = new URLSearchParams();
+    if (elevationM !== undefined) params.append('elevation_m', elevationM.toString());
+    if (slopeDeg !== undefined) params.append('slope_deg', slopeDeg.toString());
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<any>(`/api/v1/recommendations/species/${encodeURIComponent(parcelId)}${qs}`);
+  }
+
+  async getReportHtml(artifactId: string): Promise<string> {
+    const url = `${API_BASE_URL}/api/v1/recommendations/artifacts/${encodeURIComponent(artifactId)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to load report artifact: ${res.statusText}`);
+    return res.text();
+  }
 }
 
 export const api = new ApiClient();
+

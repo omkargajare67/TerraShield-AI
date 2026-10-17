@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.app.api.case_study_routes import router as case_study_router
 from backend.app.api.geospatial_routes import router as geospatial_router
 from backend.app.api.geotechnical_routes import router as geotechnical_router
 from backend.app.api.project_routes import router as project_router
@@ -57,6 +58,7 @@ app.include_router(geospatial_router, prefix=settings.API_V1_STR, tags=["Geospat
 app.include_router(geotechnical_router, prefix=settings.API_V1_STR, tags=["Geotechnical Intelligence"])
 app.include_router(recommendation_router, prefix=settings.API_V1_STR, tags=["Spatial Recommendations"])
 app.include_router(project_router, prefix=settings.API_V1_STR, tags=["Project Workspaces"])
+app.include_router(case_study_router, prefix=settings.API_V1_STR, tags=["Landslide Case Studies"])
 
 
 

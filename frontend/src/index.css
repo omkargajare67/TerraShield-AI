@@ -6,17 +6,21 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  --bg-primary: #F7F7F0;
-  --text-primary: #10251D;
-  --text-secondary: #475569;
+  color-scheme: dark;
+  --bg-primary: #06100c;
+  --bg-deep: #091812;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-emerald: #10b981;
+  --accent-mint: #34d399;
+  --accent-cyan: #38bdf8;
 }
 
 body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  background-color: #0d1e17;
-  color: #10251D;
+  background-color: #06100c;
+  color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -24,45 +28,59 @@ body {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(16, 37, 29, 0.05);
+  background: rgba(6, 16, 12, 0.6);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(52, 121, 92, 0.4);
+  background: rgba(52, 211, 153, 0.25);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(52, 121, 92, 0.7);
+  background: rgba(52, 211, 153, 0.55);
 }
 
-/* Glassmorphism Classes */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(221, 232, 220, 0.8);
+/* Deep Atmospheric Glassmorphism Classes */
+.glass-panel-deep {
+  background: rgba(9, 24, 18, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(52, 211, 153, 0.14);
 }
 
-.glass-panel-dark {
-  background: rgba(16, 37, 29, 0.82);
+.glass-panel-card {
+  background: rgba(12, 33, 25, 0.82);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(167, 230, 197, 0.15);
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(52, 211, 153, 0.16);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.glass-card:hover {
-  box-shadow: 0 10px 25px -5px rgba(16, 37, 29, 0.08);
-  border-color: #cbd5e1;
+.glass-panel-card:hover {
+  border-color: rgba(52, 211, 153, 0.32);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px -3px rgba(16, 185, 129, 0.15);
+}
+
+.glass-panel-toolbar {
+  background: rgba(8, 20, 15, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.55), 0 0 12px rgba(16, 185, 129, 0.12);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.4);
+}
+
+.glow-mint {
+  box-shadow: 0 0 20px -3px rgba(52, 211, 153, 0.45);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px -3px rgba(56, 189, 248, 0.35);
 }
 
 /* Subtle Animated Shimmer */
@@ -82,4 +100,43 @@ body {
   width: 100%;
   height: 100%;
   border-radius: 0.75rem;
+}
+
+/* Custom Leaflet popup styling matching TerraShield dark theme */
+.leaflet-popup-content-wrapper {
+  background: rgba(13, 30, 23, 0.96) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(16px) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(13, 30, 23, 0.96) !important;
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+}
+
+.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+  top: 8px !important;
+  right: 8px !important;
+  padding: 4px !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #34d399 !important;
+}
+
+/* Tree markers */
+.terra-tree-marker, .terra-tree-cluster {
+  background: transparent !important;
+  border: none !important;
 }

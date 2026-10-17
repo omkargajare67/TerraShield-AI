@@ -443,6 +443,7 @@ def run_spatial_recommendations(req: RecommendationRunRequest) -> Recommendation
     # Artifact ID mapping
     artifacts = {
         "parcels_geojson": geojson_path.name,
+        "geojson": geojson_path.name,
         "parcel_metrics_csv": metrics_path.name,
         "parcel_rankings_csv": rankings_path.name,
         "summary_json": summary_path.name,
@@ -542,7 +543,37 @@ def get_run_summary(run_id: str) -> Dict[str, Any]:
             detail=f"Recommendation run '{clean_id}' summary not found.",
         )
     with open(summary_file, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+
+    # Normalize fields for seamless client consumption
+    inv = data.get("parcel_inventory") or {}
+    if "total_parcels" not in data or data["total_parcels"] is None:
+        data["total_parcels"] = inv.get("total_evaluated", 0)
+    if "eligible_count" not in data or data["eligible_count"] is None:
+        data["eligible_count"] = inv.get("eligible_count", 0)
+    if "excluded_count" not in data or data["excluded_count"] is None:
+        data["excluded_count"] = inv.get("excluded_count", 0)
+    if "insufficient_data_count" not in data or data["insufficient_data_count"] is None:
+        data["insufficient_data_count"] = inv.get("insufficient_data_count", 0)
+    if "total_plantable_area_ha" not in data or data["total_plantable_area_ha"] is None:
+        data["total_plantable_area_ha"] = inv.get("total_plantable_area_ha", 0.0)
+    if "top_recommendations" not in data or not data["top_recommendations"]:
+        data["top_recommendations"] = data.get("top_10_recommendations", [])
+    if "artifacts" not in data or not data["artifacts"]:
+        arts = {}
+        for cand_art, cand_ext in [
+            ("parcels_geojson", f"run_{clean_id}_parcels.geojson"),
+            ("geojson", f"run_{clean_id}_parcels.geojson"),
+            ("parcel_metrics_csv", f"run_{clean_id}_parcel_metrics.csv"),
+            ("parcel_rankings_csv", f"run_{clean_id}_parcel_rankings.csv"),
+            ("summary_json", f"run_{clean_id}_summary.json"),
+            ("audit_report_html", f"run_{clean_id}_report.html"),
+        ]:
+            if (RECOMMENDATIONS_DIR / cand_ext).exists():
+                arts[cand_art] = cand_ext
+        data["artifacts"] = arts
+
+    return data
 
 
 @router.get(

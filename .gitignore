@@ -62,3 +62,7 @@ data/artifacts/
 *.tiff
 !data/sample/*.tif
 !data/sample/*.tiff
+
+# Runtime project analysis workspaces
+data/projects/proj_*
+

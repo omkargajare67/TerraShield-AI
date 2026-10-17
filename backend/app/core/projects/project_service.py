@@ -250,9 +250,10 @@ class ProjectService:
         bounds: Optional[Dict[str, float]] = None,
         boundary_geojson: Optional[Dict[str, Any]] = None,
         geotech_preset_id: str = "wayanad_saprolite",
+        project_id: Optional[str] = None,
     ) -> ProjectMetadata:
         """Create a new user-defined analysis project."""
-        p_id = f"proj_{_slugify(name)}_{uuid.uuid4().hex[:6]}"
+        p_id = project_id if project_id else f"proj_{_slugify(name)}_{uuid.uuid4().hex[:6]}"
         p_dir = PROJECTS_DIR / p_id
         p_dir.mkdir(parents=True, exist_ok=True)
 

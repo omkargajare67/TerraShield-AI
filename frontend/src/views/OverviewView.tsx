@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import type { ProjectMetadata, RecommendationRunResponse } from '../api/types';
+import React, { useState, useMemo, useEffect } from 'react';
+import type { ProjectMetadata, RecommendationRunResponse, CaseStudy } from '../api/types';
 import { api } from '../api/client';
 import { TextEffect } from '../components/motion-primitives/TextEffect';
 import { InView } from '../components/motion-primitives/InView';
@@ -7,6 +7,8 @@ import { MetricCard } from '../components/common/MetricCard';
 import { ProvenanceBanner } from '../components/common/ProvenanceBanner';
 import { HelpTooltip } from '../components/common/HelpTooltip';
 import { MapCanvas, type StudyAreaSelection } from '../components/map/MapCanvas';
+import { calculatePolygonAreaHa } from '../utils/geo';
+import { normalizeBounds } from '../utils/normalize';
 import {
   ArrowRight,
   ShieldCheck,
@@ -21,18 +23,22 @@ import {
   AlertCircle,
   Sliders,
   Layers,
+  BookOpen,
+  Calendar,
 } from 'lucide-react';
 
 interface OverviewViewProps {
   activeProject: ProjectMetadata | null;
   latestRun: RecommendationRunResponse | null;
+  parcelsGeojson?: any;
   onStartAnalysis: () => void;
   onOpenDataLibrary: () => void;
   onSelectProject?: (id: string) => void;
   onOpenResults?: () => void;
   onOpenCreateModal?: () => void;
-  onAnalysisComplete?: (results: RecommendationRunResponse) => void;
+  onAnalysisComplete?: (results: RecommendationRunResponse, geojson?: any) => void;
   onNavigateTab?: (tab: string) => void;
+  onExploreCaseStudy?: (caseId: string) => Promise<void>;
 }
 
 const STAGES = [
@@ -50,12 +56,14 @@ const STAGES = [
 export const OverviewView: React.FC<OverviewViewProps> = ({
   activeProject,
   latestRun,
+  parcelsGeojson,
   onStartAnalysis,
   onOpenDataLibrary,
   onSelectProject,
   onOpenResults,
   onAnalysisComplete,
   onNavigateTab,
+  onExploreCaseStudy,
 }) => {
   // Area selection state
   const [selectedArea, setSelectedArea] = useState<StudyAreaSelection | null>(null);
@@ -64,6 +72,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   const [priorityPreset, setPriorityPreset] = useState<'balanced' | 'landslide' | 'plantable'>('balanced');
   const [cellSizeM, setCellSizeM] = useState<number>(250);
 
+  // Case Studies and Observed Inventory state
+  const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
+  const [caseFilter, setCaseFilter] = useState<'all' | 'western_ghats' | 'himalayas' | 'nepal' | 'recent'>('all');
+  const [fetchedInventory, setFetchedInventory] = useState<{ caseId: string; data: any } | null>(null);
+
   // Analysis execution state
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [currentStage, setCurrentStage] = useState<number>(1);
@@ -71,9 +84,85 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   const [stageMessage, setStageMessage] = useState<string>('');
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [completedAnalysis, setCompletedAnalysis] = useState<RecommendationRunResponse | null>(null);
+  const [activeParcelsGeojson, setActiveParcelsGeojson] = useState<any>(null);
 
-  const bounds = activeProject?.bounds || { minx: 76.0, miny: 11.55, maxx: 76.1, maxy: 11.65 };
+  // Load registered Case Studies for Curated Library section
+  useEffect(() => {
+    let isSubscribed = true;
+    api
+      .getCaseStudies()
+      .then((data) => {
+        if (isSubscribed) setCaseStudies(data || []);
+      })
+      .catch(() => {});
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
+  const activeCaseId = useMemo(() => {
+    if (!activeProject) return null;
+    if (activeProject.id === 'wayanad_pilot') return 'wayanad_2024';
+    if (activeProject.id === 'cascade_demo') return 'cascade_demo';
+    if (activeProject.id.startsWith('proj_case_')) return activeProject.id.replace('proj_case_', '');
+    return null;
+  }, [activeProject]);
+
+  const observedInventory = fetchedInventory?.caseId === activeCaseId ? fetchedInventory.data : null;
+
+  // Fetch Observed Landslide Inventory for active project if it corresponds to a case study
+  useEffect(() => {
+    if (!activeCaseId) return;
+    let isSubscribed = true;
+
+    api
+      .getCaseStudyObservedInventory(activeCaseId)
+      .then((geo) => {
+        if (isSubscribed) setFetchedInventory({ caseId: activeCaseId, data: geo });
+      })
+      .catch(() => {
+        if (isSubscribed) setFetchedInventory({ caseId: activeCaseId, data: null });
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [activeCaseId]);
+
+  const bounds = useMemo(() => normalizeBounds(activeProject?.bounds), [activeProject?.bounds]);
   const hasRuns = (activeProject?.saved_runs && activeProject.saved_runs.length > 0) || Boolean(latestRun);
+
+  // Authoritative Study Area Calculation (Never displays 0 ha when boundary or bounds exist)
+  const authoritativeStudyAreaHa = useMemo(() => {
+    if (selectedArea && selectedArea.areaHa > 0) {
+      return selectedArea.areaHa;
+    }
+    if (activeProject?.boundary_geojson?.features?.length) {
+      try {
+        const coords = activeProject.boundary_geojson.features[0]?.geometry?.coordinates?.[0];
+        if (coords && coords.length >= 3) {
+          const a = calculatePolygonAreaHa(coords);
+          if (a > 0) return Math.round(a * 100) / 100;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    const b = activeProject?.bounds || (bounds.maxx > bounds.minx ? bounds : null);
+    if (b && b.maxx > b.minx && b.maxy > b.miny) {
+      const midLatRad = ((b.miny + b.maxy) / 2) * (Math.PI / 180);
+      const mPerDegLat = 111132.954;
+      const mPerDegLon = 111412.84 * Math.cos(midLatRad);
+      const widthM = (b.maxx - b.minx) * mPerDegLon;
+      const heightM = (b.maxy - b.miny) * mPerDegLat;
+      const areaHa = (widthM * heightM) / 10000;
+      return Math.round(areaHa * 100) / 100;
+    }
+    return 0;
+  }, [selectedArea, activeProject, bounds]);
+
+  // Active analysis run: current completed analysis, or latest project run
+  const activeRun = isAnalyzing ? null : (completedAnalysis || latestRun);
 
   // Handle One-Click Automatic Analysis Execution
   const handleExecuteAutoAnalyze = async () => {
@@ -87,7 +176,9 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     setCurrentStage(1);
     setStageTitle('Validating selected area');
     setStageMessage('Verifying coordinates, topology, and study area size...');
+    // Clear stale results immediately so user is never misled
     setCompletedAnalysis(null);
+    setActiveParcelsGeojson(null);
 
     try {
       // Launch asynchronous job with real-time polling
@@ -123,15 +214,41 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             clearInterval(pollInterval);
             setIsAnalyzing(false);
             const recRun = statusRes.result?.recommendation_run;
-            if (recRun) {
-              setCompletedAnalysis(recRun);
-              if (onAnalysisComplete) {
-                onAnalysisComplete(recRun);
+            const directGeo = statusRes.result?.parcels_geojson;
+
+            if (directGeo) {
+              setActiveParcelsGeojson(directGeo);
+              if (recRun) {
+                setCompletedAnalysis(recRun);
+                onAnalysisComplete?.(recRun, directGeo);
               }
+            } else if (recRun) {
+              setCompletedAnalysis(recRun);
+              const artId = recRun.artifacts?.parcels_geojson || recRun.artifacts?.geojson;
+              if (artId) {
+                api
+                  .fetchArtifactJson(artId)
+                  .then((geo) => {
+                    setActiveParcelsGeojson(geo);
+                    onAnalysisComplete?.(recRun, geo);
+                  })
+                  .catch((e) => {
+                    console.warn('Could not load artifact GeoJSON:', e);
+                    onAnalysisComplete?.(recRun);
+                  });
+              } else {
+                onAnalysisComplete?.(recRun);
+              }
+            }
+
+            if (statusRes.result?.project_id && onSelectProject) {
+              onSelectProject(statusRes.result.project_id);
             }
           } else if (statusRes.status === 'FAILED') {
             clearInterval(pollInterval);
             setIsAnalyzing(false);
+            setActiveParcelsGeojson(null);
+            setCompletedAnalysis(null);
             setAnalysisError(statusRes.error || 'Automated analysis pipeline failed.');
           }
         } catch (pollErr: any) {
@@ -140,12 +257,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           if (consecutiveErrors >= 5) {
             clearInterval(pollInterval);
             setIsAnalyzing(false);
+            setActiveParcelsGeojson(null);
             setAnalysisError(pollErr.message || 'Connection lost while polling analysis job.');
           }
         }
       }, 1500);
     } catch (err: any) {
       setIsAnalyzing(false);
+      setActiveParcelsGeojson(null);
       setAnalysisError(err.message || 'Failed to start automated analysis.');
     }
   };
@@ -160,42 +279,68 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         />
         <div className="absolute inset-0 bg-gradient-to-r from-terra-deep/95 via-terra-deep/80 to-transparent pointer-events-none" />
 
-        <div className="relative z-10 px-6 sm:px-8 py-10 md:py-12 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-terra-mint/15 border border-terra-mint/25 text-terra-mint text-xs font-semibold backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5 text-terra-mint" />
-            <span>ONE-CLICK LOCATION ANALYSIS • SATELLITE & DEM PIPELINE</span>
+        <div className="relative z-10 px-6 sm:px-8 py-8 md:py-10 max-w-3xl space-y-3.5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/25 text-emerald-300 text-xs font-semibold backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>GEOSPATIAL INTELLIGENCE & REFORESTATION DECISION SUPPORT</span>
           </div>
 
           <TextEffect
             as="h1"
             per="word"
-            className="text-2xl sm:text-4xl md:text-5xl font-display font-semibold text-terra-ivory tracking-tight leading-[1.15]"
+            className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white tracking-tight leading-tight"
           >
-            Select Any Location. TerraShield Does the Rest.
+            Understand terrain. Identify restoration opportunities. Explore evidence.
           </TextEffect>
 
-          <p className="text-terra-muted text-sm sm:text-base leading-relaxed max-w-xl">
-            Select or draw any hillslope on the map. TerraShield automatically finds available
-            Copernicus 30m elevation and Sentinel-2 vegetation data, derives terrain slope, runs
-            geotechnical stability models, and prioritizes reforestation parcels.
+          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
+            Select or draw any hillslope study area on the map. TerraShield connects Copernicus 30m elevation and Sentinel-2 vegetation bands to evaluate slope stability mechanics and rank root-reinforced reforestation parcels.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            {hasRuns && onOpenResults && (
-              <button
-                onClick={onOpenResults}
-                className="px-4 py-2 rounded-xl bg-terra-forest/80 hover:bg-terra-forest text-terra-mint font-semibold text-xs border border-terra-mint/30 transition flex items-center gap-2 cursor-pointer shadow-sm"
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-terra-mint" />
-                <span>View Latest Results</span>
-              </button>
-            )}
+          {/* 4 Quick Actions */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+            <button
+              onClick={onStartAnalysis}
+              className="p-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-semibold text-xs border border-emerald-400/40 transition flex flex-col gap-1 text-left cursor-pointer shadow-md shadow-emerald-950/60 group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold">New Analysis</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <span className="text-[10px] text-emerald-100 font-normal">Guided 5-step wizard</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateTab?.('case-studies')}
+              className="p-3 rounded-xl bg-[#091f17]/90 hover:bg-emerald-900/40 text-emerald-300 font-semibold text-xs border border-emerald-500/25 transition flex flex-col gap-1 text-left cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white">Case Studies</span>
+                <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <span className="text-[10px] text-slate-400 font-normal">Historical disasters</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateTab?.('map')}
+              className="p-3 rounded-xl bg-[#091f17]/90 hover:bg-emerald-900/40 text-emerald-300 font-semibold text-xs border border-emerald-500/25 transition flex flex-col gap-1 text-left cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white">Map Explorer</span>
+                <Compass className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <span className="text-[10px] text-slate-400 font-normal">Interactive parcels</span>
+            </button>
+
             <button
               onClick={onOpenDataLibrary}
-              className="px-4 py-2 rounded-xl bg-terra-forest/40 hover:bg-terra-forest/70 text-terra-muted hover:text-terra-ivory font-semibold text-xs border border-terra-border/40 transition flex items-center gap-2 cursor-pointer"
+              className="p-3 rounded-xl bg-[#091f17]/90 hover:bg-emerald-900/40 text-emerald-300 font-semibold text-xs border border-emerald-500/25 transition flex flex-col gap-1 text-left cursor-pointer group"
             >
-              <Compass className="w-3.5 h-3.5 text-terra-slate" />
-              <span>Data Library & Manual Upload</span>
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white">Recent Projects</span>
+                <Layers className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <span className="text-[10px] text-slate-400 font-normal">Workspaces & data</span>
             </button>
           </div>
         </div>
@@ -234,13 +379,18 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
         </div>
 
-        {/* Map with Interactive Drawing Canvas */}
+        {/* Map with Interactive Drawing Canvas & Direct Recommendations Overlay */}
         <div className="relative">
           <MapCanvas
-            height="460px"
+            height="480px"
             enableDrawing={true}
+            bounds={bounds}
             onBoundarySelected={(sel) => setSelectedArea(sel)}
             boundaryGeojson={selectedArea?.boundaryGeojson || activeProject?.boundary_geojson}
+            observedInventoryGeojson={observedInventory}
+            parcelsGeojson={activeParcelsGeojson || parcelsGeojson}
+            studyAreaHa={authoritativeStudyAreaHa}
+            onOpenResults={onOpenResults}
           />
         </div>
 
@@ -481,11 +631,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             label="Study Area Size"
-            value={Math.round(bounds.maxx - bounds.minx > 0 ? (bounds.maxx - bounds.minx) * 111 * (bounds.maxy - bounds.miny) * 111 * 100 : 0)}
+            value={authoritativeStudyAreaHa}
             suffix=" ha"
             icon={MapPin}
             color="emerald"
-            subtext="Calculated on WGS 84 ellipsoid"
+            subtext={selectedArea ? "Active selected boundary" : "Project study boundary"}
             badge="Boundary"
           />
           <MetricCard
@@ -496,22 +646,22 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             subtext="Elevation, Slope & NDVI"
             badge="Workspace"
           />
-          {latestRun ? (
+          {activeRun ? (
             <>
               <MetricCard
                 label="Evaluated Locations"
-                value={latestRun.total_parcels}
+                value={activeRun.total_parcels ?? (activeRun as any).parcel_inventory?.total_evaluated ?? 0}
                 icon={Mountain}
                 color="blue"
-                subtext={`Grid resolution ${latestRun.cell_size_m || 300}m`}
+                subtext={`Grid resolution ${activeRun.cell_size_m || cellSizeM || 300}m`}
                 badge="Modeled"
               />
               <MetricCard
                 label="Recommended for Planting"
-                value={latestRun.eligible_count}
+                value={activeRun.eligible_count ?? (activeRun as any).parcel_inventory?.eligible_count ?? 0}
                 icon={Trees}
                 color="emerald"
-                subtext="Passed stability & canopy rules"
+                subtext={`${((activeRun.total_plantable_area_ha ?? (activeRun as any).parcel_inventory?.total_plantable_area_ha) ?? 0).toLocaleString()} ha eligible planting area`}
                 badge="Actionable"
               />
             </>
@@ -519,11 +669,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <>
               <MetricCard
                 label="Analysis Status"
-                value={hasRuns ? 1 : 0}
+                value={isAnalyzing ? 1 : (hasRuns ? 1 : 0)}
                 icon={Mountain}
                 color="blue"
-                subtext={hasRuns ? 'Prior run available' : 'Ready for first analysis'}
-                badge={hasRuns ? 'Available' : 'Pending'}
+                subtext={isAnalyzing ? 'Computing candidate parcels...' : (hasRuns ? 'Prior run available' : 'Ready for first analysis')}
+                badge={isAnalyzing ? 'Running' : (hasRuns ? 'Available' : 'Pending')}
               />
               <MetricCard
                 label="Planting Candidates"
@@ -638,6 +788,152 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 <span>Load Wayanad Benchmark</span>
               </button>
             )}
+          </div>
+        </div>
+      </InView>
+
+      {/* Real-World Case Studies Curated Showcase */}
+      <InView direction="up" delay={0.2}>
+        <div className="space-y-4 pt-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-terra-border/40 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-terra-forest text-terra-mint border border-terra-mint/30">
+                  <BookOpen className="w-4 h-4" />
+                </span>
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-terra-mint">
+                  Real-World Landslide Case Studies
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-terra-ivory font-serif mt-1">
+                Curated Historical &amp; Recent Disaster Scenarios
+              </h3>
+              <p className="text-xs text-terra-muted max-w-2xl mt-0.5">
+                Explore verified landslide footprints and run genuine slope-stability bio-engineering models
+                across documented failure sites in the Western Ghats and Himalayas.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => onNavigateTab?.('case-studies')}
+                className="px-3.5 py-2 rounded-xl bg-terra-forest/80 hover:bg-terra-forest text-terra-mint hover:text-terra-ivory text-xs font-semibold border border-terra-mint/30 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <span>View Full Library ({caseStudies.length})</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
+            {[
+              { id: 'all' as const, label: 'All Cases' },
+              { id: 'western_ghats' as const, label: 'Western Ghats' },
+              { id: 'himalayas' as const, label: 'Himalayas' },
+              { id: 'nepal' as const, label: 'Nepal' },
+              { id: 'recent' as const, label: 'Recent (2023–2026)' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setCaseFilter(f.id)}
+                className={`px-3 py-1.5 rounded-xl transition text-xs font-medium cursor-pointer ${
+                  caseFilter === f.id
+                    ? 'bg-terra-forest text-terra-mint font-semibold border border-terra-mint/40 shadow-sm'
+                    : 'bg-terra-dark/50 text-terra-slate hover:text-terra-ivory border border-terra-border/50'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {caseStudies
+              .filter((c) => {
+                if (caseFilter === 'western_ghats') return c.region_tag === 'western_ghats';
+                if (caseFilter === 'himalayas') return c.region_tag === 'himalayas';
+                if (caseFilter === 'nepal') return c.region_tag === 'nepal';
+                if (caseFilter === 'recent') return c.temporal_tag === 'recent';
+                return true;
+              })
+              .slice(0, 6)
+              .map((c) => {
+                const isOffline = c.region_tag === 'offline_demo';
+                const isProvisional = c.verification_status === 'PROVISIONAL_RECENT';
+                const isVerified = c.verification_status === 'VERIFIED_OBSERVATION';
+
+                return (
+                  <div
+                    key={c.id}
+                    className="p-5 rounded-2xl bg-terra-forest/25 border border-terra-border/50 hover:border-terra-mint/40 transition-all flex flex-col justify-between space-y-3 group"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-mono border ${
+                            isVerified
+                              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                              : isProvisional
+                              ? 'bg-sky-500/15 border-sky-500/30 text-sky-300'
+                              : isOffline
+                              ? 'bg-slate-500/20 border-slate-500/30 text-slate-300'
+                              : 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                          }`}
+                        >
+                          {isOffline
+                            ? 'Offline Benchmark'
+                            : isProvisional
+                            ? 'Provisional Recent'
+                            : isVerified
+                            ? 'Verified Observation'
+                            : 'Historical Catalog'}
+                        </span>
+                        <span className="text-[10px] font-mono text-terra-slate flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-terra-mint" />
+                          <span>{c.event_date}</span>
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-bold text-terra-ivory text-sm group-hover:text-terra-mint transition font-serif line-clamp-1">
+                          {c.name}
+                        </h4>
+                        <div className="text-[11px] text-terra-muted flex items-center gap-1 mt-0.5 truncate">
+                          <MapPin className="w-3 h-3 text-terra-slate shrink-0" />
+                          <span className="truncate">{c.locality}, {c.state_province}</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-terra-slate line-clamp-2 leading-relaxed">
+                        {c.short_description}
+                      </p>
+
+                      <div className="flex flex-wrap gap-1 text-[10px] font-mono text-terra-slate pt-1">
+                        {c.observed_landslide_inventory && (
+                          <span className="px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/20 text-emerald-300">
+                            📍 {c.observed_landslide_inventory.features?.length || 0} Observed Footprints
+                          </span>
+                        )}
+                        <span className="px-2 py-0.5 rounded bg-terra-dark/60 border border-terra-border">
+                          {c.disaster_type.split('&')[0].trim()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-terra-border/40 flex items-center gap-2">
+                      <button
+                        onClick={() => onExploreCaseStudy ? onExploreCaseStudy(c.id) : onNavigateTab?.('case-studies')}
+                        className="w-full py-2 px-3 rounded-xl bg-terra-forest hover:bg-terra-mint hover:text-terra-deep text-terra-ivory text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <span>Explore Case Study</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       </InView>

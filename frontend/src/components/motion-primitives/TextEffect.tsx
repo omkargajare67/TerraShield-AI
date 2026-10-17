@@ -17,11 +17,13 @@ export const TextEffect: React.FC<TextEffectProps> = ({
   delay = 0,
 }) => {
   const shouldReduceMotion = useReducedMotion();
-  const tokens = per === 'word' ? children.split(' ') : children.split('');
+  const MotionTag = ((motion as any)[Component] || motion.div) as typeof motion.div;
 
   if (shouldReduceMotion) {
     return <Component className={className}>{children}</Component>;
   }
+
+  const tokens = per === 'word' ? children.split(' ') : children.split('');
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -48,10 +50,8 @@ export const TextEffect: React.FC<TextEffectProps> = ({
     },
   };
 
-  const MotionComponent = motion.create(Component as any);
-
   return (
-    <MotionComponent
+    <MotionTag
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -67,6 +67,6 @@ export const TextEffect: React.FC<TextEffectProps> = ({
           {token}
         </motion.span>
       ))}
-    </MotionComponent>
+    </MotionTag>
   );
 };

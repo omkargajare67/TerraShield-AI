@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 
+from shapely.geometry import shape
+
 from backend.app.core.recommendations.ranking import EvaluatedParcel, RankingResult
 from backend.app.core.recommendations.explainability import generate_parcel_explanation
 from backend.app.core.recommendations.provenance import RecommendationProvenance
@@ -30,6 +32,17 @@ def export_candidate_parcels_geojson(
     for p in all_parcels:
         m = p.metrics
         sc = p.score_breakdown
+
+        # Calculate topologically guaranteed interior representative point
+        repr_pt = None
+        if p.geometry:
+            try:
+                poly_shp = shape(p.geometry)
+                pt = poly_shp.representative_point()
+                repr_pt = [round(float(pt.x), 6), round(float(pt.y), 6)]
+            except Exception:
+                repr_pt = None
+
         props = {
             "parcel_id": p.parcel_id,
             "rank": p.rank,
@@ -42,12 +55,14 @@ def export_candidate_parcels_geojson(
             "slope_max_deg": m.get("slope_max_deg"),
             "elevation_mean_m": m.get("elevation_mean_m"),
             "fs_baseline_mean": m.get("fs_baseline_mean"),
+            "fs_reinforced_mean": m.get("fs_reinforced_mean"),
             "fs_delta_mean": m.get("fs_delta_mean"),
             "required_cohesion_mean_kpa": m.get("required_cohesion_mean_kpa"),
             "ndvi_mean": m.get("ndvi_mean"),
             "terrain_coverage_pct": m.get("terrain_coverage_pct"),
             "modeled_stability_gain_per_stem": p.modeled_stability_gain_per_stem,
             "protected_area_clearance": p.protected_area_clearance_note,
+            "representative_point": repr_pt,
         }
         features.append({
             "type": "Feature",

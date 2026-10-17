@@ -33,6 +33,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     slate: 'bg-terra-slate/15 text-terra-muted border-terra-slate/25',
   };
 
+  const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+
   return (
     <Spotlight className="rounded-2xl p-5 border border-terra-border/40 bg-terra-forest/30 backdrop-blur-xl transition-all duration-300 hover:border-terra-border/80">
       <div className="flex items-start justify-between">
@@ -42,7 +44,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           </span>
           <div className="flex items-baseline gap-1 text-2xl font-bold font-mono text-terra-ivory">
             {prefix && <span className="text-terra-mint text-xl font-mono">{prefix}</span>}
-            <AnimatedNumber value={value} decimals={decimals} />
+            <AnimatedNumber value={safeValue} decimals={decimals} />
             {suffix && <span className="text-sm font-sans text-terra-muted">{suffix}</span>}
           </div>
           {subtext && <p className="text-[11px] text-terra-slate">{subtext}</p>}

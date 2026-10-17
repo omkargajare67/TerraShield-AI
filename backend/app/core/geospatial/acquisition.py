@@ -828,6 +828,19 @@ def run_auto_acquisition_pipeline(
     # Step 9: Preparing Final Results
     report_step(9, "Preparing final results", "Finalizing spatial overlays, provenance records, and GeoJSON exports...")
 
+    # Load parcels geojson to provide immediate zero-latency map rendering
+    parcels_geojson_doc = None
+    geojson_filename = recommendation_run.artifacts.get("parcels_geojson")
+    if geojson_filename:
+        rec_dir = settings.PROCESSED_DIR / "recommendations"
+        candidate_file = rec_dir / geojson_filename
+        if candidate_file.exists():
+            try:
+                with open(candidate_file, "r", encoding="utf-8") as gf:
+                    parcels_geojson_doc = json.load(gf)
+            except Exception as read_err:
+                logger.warning(f"Failed to read parcels geojson for auto pipeline result: {read_err}")
+
     return {
         "success": True,
         "project_id": project_id,
@@ -837,4 +850,5 @@ def run_auto_acquisition_pipeline(
         "dem_provenance": dem_meta,
         "vegetation_provenance": ndvi_meta,
         "recommendation_run": recommendation_run.model_dump(),
+        "parcels_geojson": parcels_geojson_doc,
     }
