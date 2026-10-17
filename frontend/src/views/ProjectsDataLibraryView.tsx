@@ -126,13 +126,13 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Tab Switcher */}
-          <div className="flex items-center p-1 rounded-xl bg-terra-deep/70 border border-terra-border/40 text-xs">
+          <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono">
             <button
               onClick={() => setActiveTab('projects')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                 activeTab === 'projects'
-                  ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
-                  : 'text-terra-muted hover:text-terra-ivory'
+                  ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <FolderKanban className="w-3.5 h-3.5" />
@@ -142,8 +142,8 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
               onClick={() => setActiveTab('data')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                 activeTab === 'data'
-                  ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
-                  : 'text-terra-muted hover:text-terra-ivory'
+                  ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Database className="w-3.5 h-3.5" />
@@ -341,7 +341,7 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
                   <select
                     value={vectorPurpose}
                     onChange={(e) => setVectorPurpose(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-terra-deep/70 border border-terra-border/60 text-terra-ivory text-xs font-mono focus:outline-none focus:border-terra-mint"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-mono focus:outline-none focus:border-emerald-500"
                   >
                     <option value="boundary">Study Area Boundary (Polygons)</option>
                     <option value="exclusion">Exclusion Zones (Mask Layer)</option>
@@ -349,21 +349,21 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-terra-muted mb-1.5">
+                  <label className="block text-xs font-mono text-slate-500 mb-1.5">
                     Select File
                   </label>
                   <input
                     type="file"
                     accept=".geojson,.json,.zip,.gpkg"
                     onChange={(e) => setVectorFile(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-terra-muted file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-terra-forest file:text-terra-mint hover:file:bg-terra-forest/80 cursor-pointer"
+                    className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={!vectorFile || !activeProject || isUploading}
-                  className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs hover:bg-emerald-700 transition shadow-xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Upload className="w-4 h-4" />
                   <span>{isUploading ? 'Validating Geometry...' : 'Upload & Validate Vector'}</span>
@@ -371,8 +371,8 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
               </form>
 
               {lastVectorReport && (
-                <div className="p-3.5 rounded-xl bg-terra-deep/70 border border-terra-border/40 text-[11px] font-mono space-y-1 text-terra-muted">
-                  <span className="text-terra-mint font-semibold block">Geometry Validated:</span>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-mono space-y-1 text-slate-700">
+                  <span className="text-emerald-700 font-semibold block">Geometry Validated:</span>
                   <div>Features: {lastVectorReport.feature_count}</div>
                   <div>Geometry: {lastVectorReport.geometry_types?.join(', ') || lastVectorReport.geom_type || 'Polygon'}</div>
                   <div>CRS: {lastVectorReport.crs || lastVectorReport.original_crs}</div>
@@ -405,7 +405,7 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
                   <select
                     value={rasterLayerType}
                     onChange={(e) => setRasterLayerType(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-terra-deep/70 border border-terra-border/60 text-terra-ivory text-xs font-mono focus:outline-none focus:border-terra-mint"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-mono focus:outline-none focus:border-emerald-500"
                   >
                     <option value="dem">Digital Elevation Model (DEM) - Required</option>
                     <option value="ndvi">Vegetation Index (NDVI) - Optional</option>
@@ -415,21 +415,21 @@ export const ProjectsDataLibraryView: React.FC<ProjectsDataLibraryViewProps> = (
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono text-terra-muted mb-1.5">
+                  <label className="block text-xs font-mono text-slate-500 mb-1.5">
                     Select GeoTIFF File (.tif)
                   </label>
                   <input
                     type="file"
                     accept=".tif,.tiff"
                     onChange={(e) => setRasterFile(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-terra-muted file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-terra-forest file:text-terra-mint hover:file:bg-terra-forest/80 cursor-pointer"
+                    className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={!rasterFile || !activeProject || isUploading}
-                  className="w-full py-2.5 rounded-xl bg-terra-mint text-terra-deep font-semibold text-xs hover:bg-terra-mint/90 transition shadow-md shadow-terra-mint/10 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs hover:bg-emerald-700 transition shadow-xs disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Upload className="w-4 h-4" />
                   <span>{isUploading ? 'Validating GeoTIFF...' : 'Upload & Validate GeoTIFF'}</span>

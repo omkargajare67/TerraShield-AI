@@ -6,21 +6,21 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  --bg-primary: #06100c;
-  --bg-deep: #091812;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent-emerald: #10b981;
-  --accent-mint: #34d399;
-  --accent-cyan: #38bdf8;
+  color-scheme: light;
+  --bg-primary: #f8fafc;
+  --bg-deep: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --accent-emerald: #059669;
+  --accent-mint: #10b981;
+  --accent-cyan: #0284c7;
 }
 
 body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  background-color: #06100c;
-  color: #f8fafc;
+  background-color: #f8fafc;
+  color: #0f172a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -32,55 +32,53 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(6, 16, 12, 0.6);
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(52, 211, 153, 0.25);
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(52, 211, 153, 0.55);
+  background: #94a3b8;
 }
 
-/* Deep Atmospheric Glassmorphism Classes */
+/* Modern Bright Surface & Card Classes */
 .glass-panel-deep {
-  background: rgba(9, 24, 18, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(52, 211, 153, 0.14);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
 }
 
 .glass-panel-card {
-  background: rgba(12, 33, 25, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(52, 211, 153, 0.16);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.04);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-panel-card:hover {
-  border-color: rgba(52, 211, 153, 0.32);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px -3px rgba(16, 185, 129, 0.15);
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.08);
 }
 
 .glass-panel-toolbar {
-  background: rgba(8, 20, 15, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(52, 211, 153, 0.2);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.55), 0 0 12px rgba(16, 185, 129, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px -2px rgba(15, 23, 42, 0.08);
 }
 
 .glow-emerald {
-  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.25);
 }
 
 .glow-mint {
-  box-shadow: 0 0 20px -3px rgba(52, 211, 153, 0.45);
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.3);
 }
 
 .glow-cyan {
-  box-shadow: 0 0 20px -3px rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 20px -3px rgba(2, 132, 199, 0.25);
 }
 
 /* Subtle Animated Shimmer */
@@ -102,14 +100,13 @@ body {
   border-radius: 0.75rem;
 }
 
-/* Custom Leaflet popup styling matching TerraShield dark theme */
+/* Custom Leaflet popup styling matching bright clean theme */
 .leaflet-popup-content-wrapper {
-  background: rgba(13, 30, 23, 0.96) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
   border-radius: 14px !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6) !important;
-  backdrop-filter: blur(16px) !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08) !important;
   padding: 0 !important;
   overflow: hidden !important;
 }
@@ -117,22 +114,23 @@ body {
 .leaflet-popup-content {
   margin: 0 !important;
   line-height: 1.4 !important;
+  color: #0f172a !important;
 }
 
 .leaflet-popup-tip {
-  background: rgba(13, 30, 23, 0.96) !important;
-  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
 }
 
 .leaflet-popup-close-button {
-  color: #94a3b8 !important;
+  color: #64748b !important;
   top: 8px !important;
   right: 8px !important;
   padding: 4px !important;
 }
 
 .leaflet-popup-close-button:hover {
-  color: #34d399 !important;
+  color: #059669 !important;
 }
 
 /* Tree markers */

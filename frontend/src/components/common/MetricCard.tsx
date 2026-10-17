@@ -27,27 +27,27 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   color = 'emerald',
 }) => {
   const colorMap = {
-    emerald: 'bg-terra-mint/15 text-terra-mint border-terra-mint/25',
-    amber: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
-    blue: 'bg-sky-500/15 text-sky-300 border-sky-500/25',
-    slate: 'bg-terra-slate/15 text-terra-muted border-terra-slate/25',
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    amber: 'bg-amber-50 text-amber-700 border-amber-200',
+    blue: 'bg-sky-50 text-sky-700 border-sky-200',
+    slate: 'bg-slate-100 text-slate-700 border-slate-200',
   };
 
   const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
 
   return (
-    <Spotlight className="rounded-2xl p-5 border border-terra-border/40 bg-terra-forest/30 backdrop-blur-xl transition-all duration-300 hover:border-terra-border/80">
+    <Spotlight className="rounded-2xl p-5 border border-slate-200 bg-white shadow-xs transition-all duration-200 hover:shadow-md hover:border-slate-300">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <span className="text-xs font-mono uppercase tracking-wider text-terra-slate">
+          <span className="text-xs font-mono uppercase tracking-wider text-slate-500 font-semibold">
             {label}
           </span>
-          <div className="flex items-baseline gap-1 text-2xl font-bold font-mono text-terra-ivory">
-            {prefix && <span className="text-terra-mint text-xl font-mono">{prefix}</span>}
+          <div className="flex items-baseline gap-1 text-2xl font-bold font-mono text-slate-900">
+            {prefix && <span className="text-emerald-600 text-xl font-mono">{prefix}</span>}
             <AnimatedNumber value={safeValue} decimals={decimals} />
-            {suffix && <span className="text-sm font-sans text-terra-muted">{suffix}</span>}
+            {suffix && <span className="text-sm font-sans text-slate-500 font-normal">{suffix}</span>}
           </div>
-          {subtext && <p className="text-[11px] text-terra-slate">{subtext}</p>}
+          {subtext && <p className="text-[11px] text-slate-500">{subtext}</p>}
         </div>
 
         <div className="flex flex-col items-end gap-2">
@@ -55,7 +55,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             <Icon className="w-4 h-4" />
           </div>
           {badge && (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-terra-deep/70 text-terra-slate border border-terra-border/40">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-50 text-slate-600 border border-slate-200">
               {badge}
             </span>
           )}

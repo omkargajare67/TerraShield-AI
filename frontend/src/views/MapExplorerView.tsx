@@ -178,21 +178,21 @@ export const MapExplorerView: React.FC<MapExplorerViewProps> = ({
   return (
     <div className="space-y-4 pb-12 animate-fade-in max-w-[1720px] mx-auto px-3 sm:px-6">
       {/* Top Filter and Context Controls Strip */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl glass-panel-deep border border-emerald-500/20 backdrop-blur-xl shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
             <Compass className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-display font-bold text-white tracking-tight">
+              <h2 className="text-sm font-display font-bold text-slate-900 tracking-tight">
                 Geospatial Intelligence Map
               </h2>
-              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 Interactive Analysis
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-sans">
+            <p className="text-[11px] text-slate-500 font-sans">
               Hillslope parcels, infinite-slope stability indices, and vegetative root reinforcement.
             </p>
           </div>
@@ -200,13 +200,13 @@ export const MapExplorerView: React.FC<MapExplorerViewProps> = ({
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Quick Parcel Filter Buttons */}
-          <div className="flex items-center p-1 rounded-xl bg-[#071610] border border-emerald-500/20 text-xs font-mono">
+          <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono">
             <button
               onClick={() => setFilterLayer('all')}
               className={`px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${
                 filterLayer === 'all'
-                  ? 'bg-emerald-600/40 text-emerald-200 border border-emerald-400/40 font-semibold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               All
@@ -215,8 +215,8 @@ export const MapExplorerView: React.FC<MapExplorerViewProps> = ({
               onClick={() => setFilterLayer('top5')}
               className={`px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${
                 filterLayer === 'top5'
-                  ? 'bg-emerald-600/40 text-emerald-200 border border-emerald-400/40 font-semibold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Top Tier (1–5)
@@ -225,8 +225,8 @@ export const MapExplorerView: React.FC<MapExplorerViewProps> = ({
               onClick={() => setFilterLayer('eligible')}
               className={`px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${
                 filterLayer === 'eligible'
-                  ? 'bg-emerald-600/40 text-emerald-200 border border-emerald-400/40 font-semibold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Eligible
@@ -235,8 +235,8 @@ export const MapExplorerView: React.FC<MapExplorerViewProps> = ({
               onClick={() => setFilterLayer('excluded')}
               className={`px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${
                 filterLayer === 'excluded'
-                  ? 'bg-emerald-600/40 text-emerald-200 border border-emerald-400/40 font-semibold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Excluded
@@ -246,7 +246,7 @@ export const MapExplorerView: React.FC<MapExplorerViewProps> = ({
           {onNavigateToWizard && (
             <button
               onClick={onNavigateToWizard}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-mono font-semibold transition cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-mono font-semibold transition cursor-pointer shadow-xs"
               title="Start a new guided analysis"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -257,10 +257,10 @@ export const MapExplorerView: React.FC<MapExplorerViewProps> = ({
           {/* Toggle Inspector Panel Button */}
           <button
             onClick={() => setIsInspectorOpen(!isInspectorOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#081812] hover:bg-emerald-950/60 text-slate-300 hover:text-emerald-300 border border-emerald-500/20 text-xs font-mono transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-mono transition cursor-pointer"
             title={isInspectorOpen ? 'Collapse inspection panel' : 'Open inspection panel'}
           >
-            {isInspectorOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRightOpen className="w-3.5 h-3.5" />}
+            {isInspectorOpen ? <PanelRightClose className="w-3.5 h-3.5 text-slate-500" /> : <PanelRightOpen className="w-3.5 h-3.5 text-slate-500" />}
             <span className="hidden md:inline">{isInspectorOpen ? 'Hide Inspector' : 'Show Inspector'}</span>
           </button>
         </div>

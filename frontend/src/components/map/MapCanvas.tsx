@@ -174,14 +174,16 @@ function createTreeDivIcon(rank?: number, isSelected?: boolean): L.DivIcon {
 // Leaflet DivIcon generator for Cluster Badges
 function createTreeClusterIcon(count: number, hasTop1: boolean): L.DivIcon {
   const bg = hasTop1
-    ? 'background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); border: 2px solid #fbbf24;'
-    : 'background: linear-gradient(135deg, #065f46 0%, #064e3b 100%); border: 2px solid #34d399;';
+    ? 'background: #ffffff; border: 2px solid #f59e0b; color: #b45309; box-shadow: 0 4px 12px rgba(245,158,11,0.25);'
+    : 'background: #ffffff; border: 1.5px solid #059669; color: #047857; box-shadow: 0 4px 12px rgba(5,150,105,0.2);';
+
+  const treeColor = hasTop1 ? '#d97706' : '#059669';
 
   const html = `
-    <div style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 9999px; ${bg} color: #ffffff; font-family: monospace; font-size: 11px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.5); cursor: pointer; white-space: nowrap;">
-      <svg style="width: 14px; height: 14px; fill: #6ee7b7;" viewBox="0 0 24 24">
+    <div style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 9999px; ${bg} font-family: monospace; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+      <svg style="width: 14px; height: 14px; fill: ${treeColor};" viewBox="0 0 24 24">
         <path d="M12 2L4 12h5l-3 7h12l-3-7h5L12 2z"/>
-        <rect x="11" y="19" width="2" height="3" fill="#6ee7b7"/>
+        <rect x="11" y="19" width="2" height="3" fill="${treeColor}"/>
       </svg>
       <span>${count} parcels</span>
     </div>
@@ -1134,7 +1136,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
       {/* Top Left: Interactive Selection Toolbar */}
       {enableDrawing && (
-        <div className="absolute top-3 left-3 z-[400] flex flex-wrap items-center gap-1.5 bg-terra-deep/90 border border-terra-border/70 backdrop-blur-md p-1.5 rounded-xl shadow-xl text-xs text-terra-ivory font-sans">
+        <div className="absolute top-3 left-3 z-[400] flex flex-wrap items-center gap-1.5 bg-white/95 border border-slate-200 backdrop-blur-md p-1.5 rounded-xl shadow-md text-xs text-slate-800 font-sans">
           <button
             onClick={() => {
               setDrawMode(drawMode === 'polygon' ? 'none' : 'polygon');
@@ -1143,12 +1145,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               drawMode === 'polygon'
-                ? 'bg-terra-mint text-terra-deep font-semibold shadow'
-                : 'hover:bg-terra-forest/60 text-terra-ivory'
+                ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                : 'hover:bg-slate-100 text-slate-700'
             }`}
             title="Click points on map to outline a hillslope or catchment polygon"
           >
-            <Pentagon className="w-3.5 h-3.5" />
+            <Pentagon className="w-3.5 h-3.5 text-emerald-600" />
             <span>{drawMode === 'polygon' ? 'Drawing...' : 'Draw Polygon'}</span>
           </button>
 
@@ -1160,19 +1162,19 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
               drawMode === 'rectangle'
-                ? 'bg-blue-500 text-white font-semibold shadow'
-                : 'hover:bg-terra-forest/60 text-terra-ivory'
+                ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                : 'hover:bg-slate-100 text-slate-700'
             }`}
             title="Click two diagonal corners on the map to select a study area"
           >
-            <Square className="w-3.5 h-3.5" />
+            <Square className="w-3.5 h-3.5 text-sky-600" />
             <span>{drawMode === 'rectangle' ? 'Click 2 Corners' : 'Draw Box'}</span>
           </button>
 
           {drawMode === 'polygon' && polygonPoints.length >= 3 && (
             <button
               onClick={completeCurrentPolygon}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-semibold shadow hover:bg-emerald-600 transition cursor-pointer animate-pulse"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold shadow hover:bg-emerald-700 transition cursor-pointer animate-pulse"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Finish ({polygonPoints.length} pts)</span>
@@ -1182,7 +1184,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           {currentSelection && (
             <button
               onClick={handleClear}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-rose-300 hover:bg-rose-500/20 transition cursor-pointer font-medium"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition cursor-pointer font-medium"
               title="Clear selected boundary"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -1192,23 +1194,23 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
           <div className="relative group">
             <button
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-terra-forest/60 text-terra-muted hover:text-terra-ivory transition cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer"
               title="Jump to critical landslide corridors"
             >
-              <Compass className="w-3.5 h-3.5 text-terra-mint" />
+              <Compass className="w-3.5 h-3.5 text-emerald-600" />
               <span className="hidden sm:inline">Presets</span>
             </button>
-            <div className="absolute left-0 mt-1 hidden group-hover:block w-52 bg-terra-deep/95 border border-terra-border/80 backdrop-blur-xl rounded-xl shadow-2xl py-1 z-50">
-              <div className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-terra-slate">
+            <div className="absolute left-0 mt-1 hidden group-hover:block w-52 bg-white border border-slate-200 backdrop-blur-xl rounded-xl shadow-xl py-1 z-50">
+              <div className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider text-slate-400">
                 Select Corridor
               </div>
               {QUICK_PRESETS.map((p) => (
                 <button
                   key={p.name}
                   onClick={() => handleSelectPreset(p)}
-                  className="w-full text-left px-3 py-1.5 text-xs text-terra-ivory hover:bg-terra-forest/70 hover:text-terra-mint transition flex items-center gap-1.5"
+                  className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition flex items-center gap-1.5"
                 >
-                  <MapPin className="w-3 h-3 text-terra-mint shrink-0" />
+                  <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
                   <span className="truncate">{p.name}</span>
                 </button>
               ))}
@@ -1219,8 +1221,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
       {/* Top Center: Drawing Instruction Banner */}
       {drawMode !== 'none' && (
-        <div className="absolute top-16 left-3 z-[400] bg-terra-deep/95 border border-terra-mint/40 text-terra-mint text-xs px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2 font-mono">
-          <Crosshair className="w-4 h-4 animate-spin text-terra-mint" />
+        <div className="absolute top-16 left-3 z-[400] bg-white/95 border border-emerald-300 text-emerald-800 text-xs px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2 font-mono">
+          <Crosshair className="w-4 h-4 animate-spin text-emerald-600" />
           <span>
             {drawMode === 'polygon'
               ? `Click to place polygon vertex (${polygonPoints.length} placed). Click "Finish" or double-click to close.`
@@ -1234,13 +1236,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       {/* Top Right: Layer Filter Controls */}
       {hasParcels && (
         <div className="absolute top-3 right-12 z-[400]">
-          <div className="bg-terra-deep/95 border border-terra-border/70 backdrop-blur-xl p-1.5 rounded-xl shadow-xl flex items-center gap-1.5 text-xs text-terra-ivory font-sans">
+          <div className="bg-white/95 border border-slate-200 backdrop-blur-xl p-1.5 rounded-xl shadow-md flex items-center gap-1.5 text-xs text-slate-800 font-sans">
             <button
               onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-terra-forest/80 hover:bg-terra-forest text-terra-mint font-semibold text-xs transition cursor-pointer border border-terra-mint/30"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs transition cursor-pointer border border-slate-200"
               title="Filter map layers"
             >
-              <Layers className="w-3.5 h-3.5" />
+              <Layers className="w-3.5 h-3.5 text-indigo-600" />
               <span>Layers</span>
               {isFilterPanelOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
@@ -1250,121 +1252,121 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               onClick={() => setShowTreeMarkers(!showTreeMarkers)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer border ${
                 showTreeMarkers
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-terra-forest/40 text-terra-slate border-terra-border/50 line-through'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-2xs'
+                  : 'bg-slate-100 text-slate-400 border-slate-200 line-through'
               }`}
               title="Toggle tree planting icons on recommended parcels"
             >
-              <Trees className="w-3.5 h-3.5" />
+              <Trees className="w-3.5 h-3.5 text-emerald-600" />
               <span>Tree Icons</span>
-              {showTreeMarkers ? <Eye className="w-3 h-3 text-emerald-400" /> : <EyeOff className="w-3 h-3 text-terra-slate" />}
+              {showTreeMarkers ? <Eye className="w-3 h-3 text-emerald-600" /> : <EyeOff className="w-3 h-3 text-slate-400" />}
             </button>
           </div>
 
           {/* Expanded Filter Panel */}
           {isFilterPanelOpen && (
-            <div className="absolute right-0 mt-2 w-64 p-3 bg-terra-deep/95 border border-terra-border/80 backdrop-blur-2xl rounded-2xl shadow-2xl space-y-2 z-50 text-xs font-sans">
-              <div className="font-bold text-terra-mint text-xs flex items-center justify-between pb-1.5 border-b border-terra-border/40">
+            <div className="absolute right-0 mt-2 w-64 p-3 bg-white border border-slate-200 backdrop-blur-2xl rounded-2xl shadow-2xl space-y-2 z-50 text-xs font-sans">
+              <div className="font-bold text-slate-900 text-xs flex items-center justify-between pb-1.5 border-b border-slate-100">
                 <span>Map Layer Controls</span>
-                <span className="text-[10px] text-terra-slate font-mono">Independent</span>
+                <span className="text-[10px] text-slate-400 font-mono">Independent</span>
               </div>
 
               <div className="space-y-1.5 text-[11px]">
                 {/* Observed Disaster Inventory Toggle */}
-                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-terra-forest/50 cursor-pointer">
+                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-red-600 border border-amber-400" />
-                    <span className="text-red-300 font-medium">Observed Disaster Inventory</span>
+                    <span className="text-red-700 font-medium">Observed Disaster Inventory</span>
                   </span>
                   <input
                     type="checkbox"
                     checked={showObservedInventory}
                     onChange={(e) => setShowObservedInventory(e.target.checked)}
-                    className="accent-red-500 cursor-pointer"
+                    className="accent-red-600 cursor-pointer"
                   />
                 </label>
 
                 {/* Tree Markers Toggle */}
-                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-terra-forest/50 cursor-pointer">
+                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
                   <span className="flex items-center gap-2">
-                    <Trees className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-terra-ivory font-medium">Recommended Tree Icons</span>
+                    <Trees className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-slate-800 font-medium">Recommended Tree Icons</span>
                   </span>
                   <input
                     type="checkbox"
                     checked={showTreeMarkers}
                     onChange={(e) => setShowTreeMarkers(e.target.checked)}
-                    className="accent-terra-mint cursor-pointer"
+                    className="accent-emerald-600 cursor-pointer"
                   />
                 </label>
 
                 {/* Top Priority Toggle */}
-                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-terra-forest/50 cursor-pointer">
+                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-sm bg-[#10b981] border border-[#064e3b]" />
-                    <span className="text-terra-ivory font-medium">Top Priority (Ranks 1–5)</span>
+                    <span className="text-slate-800 font-medium">Top Priority (Ranks 1–5)</span>
                   </span>
                   <input
                     type="checkbox"
                     checked={showTopPriority}
                     onChange={(e) => setShowTopPriority(e.target.checked)}
-                    className="accent-terra-mint cursor-pointer"
+                    className="accent-emerald-600 cursor-pointer"
                   />
                 </label>
 
                 {/* Other Eligible Toggle */}
-                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-terra-forest/50 cursor-pointer">
+                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-sm bg-[#6ee7b7] border border-[#059669]" />
-                    <span className="text-terra-ivory font-medium">Other Eligible Parcels</span>
+                    <span className="text-slate-800 font-medium">Other Eligible Parcels</span>
                   </span>
                   <input
                     type="checkbox"
                     checked={showOtherEligible}
                     onChange={(e) => setShowOtherEligible(e.target.checked)}
-                    className="accent-terra-mint cursor-pointer"
+                    className="accent-emerald-600 cursor-pointer"
                   />
                 </label>
 
                 {/* Excluded Parcels Toggle */}
-                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-terra-forest/50 cursor-pointer">
+                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-sm bg-[#94a3b8] border border-[#64748b] border-dashed" />
-                    <span className="text-terra-slate font-medium">Excluded Parcels</span>
+                    <span className="text-slate-500 font-medium">Excluded Parcels</span>
                   </span>
                   <input
                     type="checkbox"
                     checked={showExcluded}
                     onChange={(e) => setShowExcluded(e.target.checked)}
-                    className="accent-terra-mint cursor-pointer"
+                    className="accent-emerald-600 cursor-pointer"
                   />
                 </label>
 
                 {/* Insufficient Data Toggle */}
-                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-terra-forest/50 cursor-pointer">
+                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-sm bg-[#f59e0b] border border-[#b45309]" />
-                    <span className="text-amber-300 font-medium">Insufficient Data</span>
+                    <span className="text-amber-700 font-medium">Insufficient Data</span>
                   </span>
                   <input
                     type="checkbox"
                     checked={showInsufficient}
                     onChange={(e) => setShowInsufficient(e.target.checked)}
-                    className="accent-terra-mint cursor-pointer"
+                    className="accent-amber-500 cursor-pointer"
                   />
                 </label>
 
                 {/* Boundary Toggle */}
-                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-terra-forest/50 cursor-pointer">
+                <label className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
                   <span className="flex items-center gap-2">
                     <span className="w-3.5 h-0 border-t-2 border-dashed border-[#10b981]" />
-                    <span className="text-terra-ivory font-medium">Study Boundary Outline</span>
+                    <span className="text-slate-800 font-medium">Study Boundary Outline</span>
                   </span>
                   <input
                     type="checkbox"
                     checked={showBoundary}
                     onChange={(e) => setShowBoundary(e.target.checked)}
-                    className="accent-terra-mint cursor-pointer"
+                    className="accent-emerald-600 cursor-pointer"
                   />
                 </label>
               </div>
@@ -1374,17 +1376,17 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       )}
 
       {/* Bottom Right: Floating Restoration Map Legend & Results Summary */}
-      <div className="absolute bottom-3 right-3 z-[400] bg-terra-deep/95 border border-terra-border/80 backdrop-blur-xl rounded-2xl shadow-2xl p-3 text-xs text-terra-ivory font-sans pointer-events-auto max-w-[280px]">
+      <div className="absolute bottom-3 right-3 z-[400] bg-white/95 border border-slate-200 backdrop-blur-xl rounded-2xl shadow-xl p-3 text-xs text-slate-800 font-sans pointer-events-auto max-w-[280px]">
         {/* Header with expand/collapse */}
         <div
-          className="flex items-center justify-between cursor-pointer pb-1.5 border-b border-terra-border/40"
+          className="flex items-center justify-between cursor-pointer pb-1.5 border-b border-slate-100"
           onClick={() => setIsLegendExpanded(!isLegendExpanded)}
         >
-          <div className="font-bold text-terra-mint text-xs flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-terra-mint animate-pulse" />
+          <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Restoration Map Legend</span>
           </div>
-          <button className="text-terra-slate hover:text-terra-ivory transition">
+          <button className="text-slate-400 hover:text-slate-700 transition">
             {isLegendExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
           </button>
         </div>
@@ -1393,23 +1395,23 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           <div className="space-y-2.5 pt-2">
             {/* Live Metrics Counters (if parcels loaded) */}
             {hasParcels && (
-              <div className="p-2 rounded-xl bg-terra-forest/40 border border-terra-mint/20 space-y-1 text-[11px] font-mono">
+              <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-[11px] font-mono">
                 <div className="flex justify-between items-center">
-                  <span className="text-terra-slate">Recommended parcels:</span>
-                  <span className="text-emerald-400 font-bold">{summaryMetrics.eligibleCount}</span>
+                  <span className="text-slate-500">Recommended parcels:</span>
+                  <span className="text-emerald-700 font-bold">{summaryMetrics.eligibleCount}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-terra-slate">Highest-priority parcels:</span>
-                  <span className="text-emerald-300 font-bold">{summaryMetrics.topTierCount}</span>
+                  <span className="text-slate-500">Highest-priority parcels:</span>
+                  <span className="text-emerald-600 font-bold">{summaryMetrics.topTierCount}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-terra-slate">Eligible area:</span>
-                  <span className="text-terra-ivory font-bold">{summaryMetrics.eligibleAreaHa.toLocaleString()} ha</span>
+                  <span className="text-slate-500">Eligible area:</span>
+                  <span className="text-slate-900 font-bold">{summaryMetrics.eligibleAreaHa.toLocaleString()} ha</span>
                 </div>
                 {effectiveStudyArea > 0 && (
-                  <div className="flex justify-between items-center pt-1 border-t border-terra-border/20">
-                    <span className="text-terra-slate">Study area size:</span>
-                    <span className="text-terra-mint font-semibold">{effectiveStudyArea.toLocaleString()} ha</span>
+                  <div className="flex justify-between items-center pt-1 border-t border-slate-200">
+                    <span className="text-slate-500">Study area size:</span>
+                    <span className="text-slate-900 font-semibold">{effectiveStudyArea.toLocaleString()} ha</span>
                   </div>
                 )}
               </div>
@@ -1421,48 +1423,48 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                 <span className="w-3.5 h-3.5 rounded-full bg-red-600 border border-amber-300 flex items-center justify-center shrink-0">
                   <span className="text-[8px] font-bold text-white leading-none">⚠</span>
                 </span>
-                <span className="font-semibold text-red-300">Red Marker — Documented landslide initiation / surge</span>
+                <span className="font-semibold text-red-700">Red Marker — Documented landslide initiation</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-0 border-t-2 border-dashed border-[#ef4444] shrink-0" />
-                <span className="text-red-400">Crimson Dashed — Observed runout corridor footprint</span>
+                <span className="text-red-600">Crimson Dashed — Runout corridor footprint</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-4 h-4 rounded-full bg-[#064e3b] border-2 border-amber-300 flex items-center justify-center shrink-0">
+                <span className="w-4 h-4 rounded-full bg-emerald-600 border border-emerald-700 flex items-center justify-center shrink-0">
                   <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24">
                     <path d="M12 2L4 12h5l-3 7h12l-3-7h5L12 2z"/>
                   </svg>
                 </span>
-                <span className="font-semibold text-terra-ivory">Tree Icon — Recommended planting parcel</span>
+                <span className="font-semibold text-slate-900">Tree Icon — Recommended planting parcel</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded-sm bg-[#10b981] border border-[#064e3b] shrink-0" />
-                <span className="font-semibold text-terra-ivory">Dark Green — Highest-priority restoration zone</span>
+                <span className="font-semibold text-slate-900">Dark Green — Highest-priority restoration zone</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded-sm bg-[#34d399] border border-[#047857] shrink-0" />
-                <span className="text-terra-muted">Medium Green — High priority (Ranks 2–5)</span>
+                <span className="text-slate-600">Medium Green — High priority (Ranks 2–5)</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded-sm bg-[#6ee7b7] border border-[#059669] shrink-0" />
-                <span className="text-terra-muted">Green — Other eligible planting zones</span>
+                <span className="text-slate-600">Green — Other eligible planting zones</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded-sm bg-[#94a3b8] border border-[#64748b] border-dashed shrink-0" />
-                <span className="text-terra-slate">Grey — Excluded parcel (Slope &gt; 45° / Canopy)</span>
+                <span className="text-slate-400">Grey — Excluded parcel (Slope &gt; 45° / Canopy)</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded-sm bg-[#f59e0b] border border-[#b45309] shrink-0" />
-                <span className="text-amber-300">Amber — Insufficient data</span>
+                <span className="text-amber-700">Amber — Insufficient data</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-0 border-t-2 border-dashed border-[#10b981] shrink-0" />
-                <span className="text-emerald-400">Dashed Outline — Selected study boundary</span>
+                <span className="text-emerald-700">Dashed Outline — Selected study boundary</span>
               </div>
             </div>
 
             {/* Scientific Explanation Note */}
-            <div className="text-[9.5px] text-terra-slate/90 pt-1.5 border-t border-terra-border/30 leading-snug">
+            <div className="text-[9.5px] text-slate-500 pt-1.5 border-t border-slate-100 leading-snug">
               Tree symbols identify recommended planting parcels. They do not represent surveyed positions for individual trees.
             </div>
 
@@ -1470,7 +1472,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             {hasParcels && onOpenResults && (
               <button
                 onClick={onOpenResults}
-                className="w-full py-1.5 px-2.5 rounded-lg bg-terra-mint/15 hover:bg-terra-mint/25 text-terra-mint font-semibold text-[11px] border border-terra-mint/30 transition text-center cursor-pointer"
+                className="w-full py-1.5 px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[11px] border border-emerald-200 transition text-center cursor-pointer shadow-2xs"
               >
                 Inspect Results Table &amp; Audit &rarr;
               </button>

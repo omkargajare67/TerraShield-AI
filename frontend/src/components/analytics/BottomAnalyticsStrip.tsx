@@ -127,17 +127,17 @@ export const BottomAnalyticsStrip: React.FC<BottomAnalyticsStripProps> = ({
 
   return (
     <div
-      className={`grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-2xl glass-panel-deep border border-emerald-500/20 text-slate-200 ${className}`}
+      className={`grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs text-slate-800 ${className}`}
     >
       {/* Module A: Analysis Summary */}
-      <div className="p-3.5 rounded-xl bg-[#091a13] border border-emerald-500/15 flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-2 border-b border-emerald-500/15 mb-2.5">
+      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 mb-2.5">
           <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-bold font-display text-white">Analysis Summary</span>
+            <BarChart3 className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs font-bold font-display text-slate-900">Analysis Summary</span>
           </div>
           {metrics && (
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/25">
+            <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold">
               {metrics.status}
             </span>
           )}
@@ -145,50 +145,50 @@ export const BottomAnalyticsStrip: React.FC<BottomAnalyticsStripProps> = ({
 
         {metrics ? (
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="p-2 rounded-lg bg-emerald-950/30 border border-emerald-500/10">
-              <span className="text-[9.5px] font-mono text-slate-400 block uppercase">Evaluated</span>
-              <span className="text-sm font-bold font-mono text-white">
+            <div className="p-2 rounded-lg bg-white border border-slate-200 shadow-2xs">
+              <span className="text-[9.5px] font-mono text-slate-500 block uppercase font-medium">Evaluated</span>
+              <span className="text-sm font-bold font-mono text-slate-900">
                 {metrics.totalEvaluated.toLocaleString()}
               </span>
               <span className="text-[9px] text-slate-500 font-mono block">parcels</span>
             </div>
 
-            <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/20">
-              <span className="text-[9.5px] font-mono text-emerald-400 block uppercase">Eligible</span>
-              <span className="text-sm font-bold font-mono text-emerald-300">
+            <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 shadow-2xs">
+              <span className="text-[9.5px] font-mono text-emerald-700 block uppercase font-medium">Eligible</span>
+              <span className="text-sm font-bold font-mono text-emerald-800">
                 {metrics.eligibleCount.toLocaleString()}
               </span>
-              <span className="text-[9px] text-emerald-400/80 font-mono block">
+              <span className="text-[9px] text-emerald-700 font-mono block">
                 {metrics.totalPlantableAreaHa.toFixed(1)} ha
               </span>
             </div>
 
-            <div className="p-2 rounded-lg bg-slate-900/40 border border-slate-700/20">
-              <span className="text-[9.5px] font-mono text-slate-400 block uppercase">Excluded</span>
-              <span className="text-sm font-bold font-mono text-rose-300">
+            <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 shadow-2xs">
+              <span className="text-[9.5px] font-mono text-rose-700 block uppercase font-medium">Excluded</span>
+              <span className="text-sm font-bold font-mono text-rose-800">
                 {metrics.excludedCount.toLocaleString()}
               </span>
-              <span className="text-[9px] text-amber-400/80 font-mono block">
+              <span className="text-[9px] text-rose-600 font-mono block">
                 {metrics.insufficientCount} gap
               </span>
             </div>
           </div>
         ) : (
-          <div className="py-4 text-center text-xs text-slate-400">
+          <div className="py-4 text-center text-xs text-slate-500">
             <span>No analysis results available for this project workspace.</span>
           </div>
         )}
       </div>
 
       {/* Module B: Priority Distribution Donut / Progress */}
-      <div className="p-3.5 rounded-xl bg-[#091a13] border border-emerald-500/15 flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-2 border-b border-emerald-500/15 mb-2.5">
+      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 mb-2.5">
           <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-bold font-display text-white">Priority Distribution</span>
+            <PieChart className="w-4 h-4 text-sky-600" />
+            <span className="text-xs font-bold font-display text-slate-900">Priority Distribution</span>
           </div>
           {distribution && (
-            <span className="text-[10px] font-mono text-slate-400">
+            <span className="text-[10px] font-mono text-slate-500">
               {distribution.total} candidate parcels
             </span>
           )}
@@ -197,11 +197,11 @@ export const BottomAnalyticsStrip: React.FC<BottomAnalyticsStripProps> = ({
         {distribution ? (
           <div className="space-y-2">
             {/* Multi-segment distribution bar */}
-            <div className="w-full h-3 rounded-full bg-slate-800 flex overflow-hidden shadow-inner">
+            <div className="w-full h-3 rounded-full bg-slate-200 flex overflow-hidden shadow-inner">
               {distribution.pctHigh > 0 && (
                 <div
                   style={{ width: `${distribution.pctHigh}%` }}
-                  className="bg-emerald-400 h-full"
+                  className="bg-emerald-500 h-full"
                   title={`High Priority (Top 5): ${distribution.highPriority} (${distribution.pctHigh}%)`}
                 />
               )}
@@ -222,23 +222,23 @@ export const BottomAnalyticsStrip: React.FC<BottomAnalyticsStripProps> = ({
               {distribution.pctExc > 0 && (
                 <div
                   style={{ width: `${distribution.pctExc}%` }}
-                  className="bg-rose-600/70 h-full"
+                  className="bg-rose-500 h-full"
                   title={`Excluded Parcels: ${distribution.excluded} (${distribution.pctExc}%)`}
                 />
               )}
               {distribution.pctIns > 0 && (
                 <div
                   style={{ width: `${distribution.pctIns}%` }}
-                  className="bg-amber-500/70 h-full"
+                  className="bg-amber-400 h-full"
                   title={`Insufficient Data: ${distribution.insufficient} (${distribution.pctIns}%)`}
                 />
               )}
             </div>
 
             {/* Legend with exact parcel counts */}
-            <div className="grid grid-cols-3 gap-1 text-[10px] font-mono text-slate-300 pt-1">
+            <div className="grid grid-cols-3 gap-1 text-[10px] font-mono text-slate-600 pt-1">
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span>Tier 1 ({distribution.highPriority})</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -252,20 +252,20 @@ export const BottomAnalyticsStrip: React.FC<BottomAnalyticsStripProps> = ({
             </div>
           </div>
         ) : (
-          <div className="py-4 text-center text-xs text-slate-400">
+          <div className="py-4 text-center text-xs text-slate-500">
             <span>Run recommendations to view parcel tier distribution.</span>
           </div>
         )}
       </div>
 
       {/* Module C: Terrain & Stability Profile */}
-      <div className="p-3.5 rounded-xl bg-[#091a13] border border-emerald-500/15 flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-2 border-b border-emerald-500/15 mb-2.5">
+      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 mb-2.5">
           <div className="flex items-center gap-2">
-            <Mountain className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-bold font-display text-white">Terrain & Stability Profile</span>
+            <Mountain className="w-4 h-4 text-amber-600" />
+            <span className="text-xs font-bold font-display text-slate-900">Terrain & Stability Profile</span>
           </div>
-          <span className="text-[10px] font-mono text-slate-400">
+          <span className="text-[10px] font-mono text-slate-500">
             {terrainProfile?.type === 'PARCEL' ? 'Selected Parcel' : 'Study Area'}
           </span>
         </div>
@@ -273,12 +273,12 @@ export const BottomAnalyticsStrip: React.FC<BottomAnalyticsStripProps> = ({
         {terrainProfile ? (
           <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between font-mono">
-              <span className="text-slate-400">Mean Slope Gradient:</span>
-              <span className="font-bold text-white">{terrainProfile.slopeMean.toFixed(1)}°</span>
+              <span className="text-slate-600">Mean Slope Gradient:</span>
+              <span className="font-bold text-slate-900">{terrainProfile.slopeMean.toFixed(1)}°</span>
             </div>
 
             {terrainProfile.slopeMin !== undefined && terrainProfile.slopeMax !== undefined && (
-              <div className="flex items-center justify-between font-mono text-[11px] text-slate-400">
+              <div className="flex items-center justify-between font-mono text-[11px] text-slate-500">
                 <span>Slope Range:</span>
                 <span>
                   {terrainProfile.slopeMin.toFixed(1)}° – {terrainProfile.slopeMax.toFixed(1)}°
@@ -287,16 +287,16 @@ export const BottomAnalyticsStrip: React.FC<BottomAnalyticsStripProps> = ({
             )}
 
             {terrainProfile.baselineFs !== undefined && terrainProfile.reinforcedFs !== undefined && (
-              <div className="flex items-center justify-between font-mono text-[11px] pt-1 border-t border-emerald-500/15">
-                <span className="text-slate-400">Factor of Safety:</span>
-                <span className="text-emerald-300 font-bold">
+              <div className="flex items-center justify-between font-mono text-[11px] pt-1 border-t border-slate-200">
+                <span className="text-slate-600">Factor of Safety:</span>
+                <span className="text-emerald-700 font-bold">
                   FS {terrainProfile.baselineFs.toFixed(2)} → {terrainProfile.reinforcedFs.toFixed(2)}
                 </span>
               </div>
             )}
           </div>
         ) : (
-          <div className="py-4 text-center text-xs text-slate-400">
+          <div className="py-4 text-center text-xs text-slate-500">
             <span>Terrain profile data currently unavailable.</span>
           </div>
         )}

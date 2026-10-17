@@ -228,13 +228,13 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
             </p>
           </div>
 
-          <div className="text-xs font-mono text-terra-slate bg-terra-deep/70 px-3 py-1.5 rounded-xl border border-terra-border/50 self-start">
+          <div className="text-xs font-mono text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 self-start">
             Step {currentStep + 1} of 5
           </div>
         </div>
 
         {/* Stepper Navigation Indicator */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 border-t border-terra-border/40 pt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 border-t border-slate-100 pt-4">
           {steps.map((s, idx) => {
             const isDone = currentStep > idx;
             const isCurrent = currentStep === idx;
@@ -247,26 +247,26 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                 disabled={isRunning}
                 className={`p-2.5 rounded-2xl flex items-center gap-2.5 text-xs font-semibold transition text-left cursor-pointer border ${
                   isCurrent
-                    ? 'bg-terra-forest border-terra-mint text-terra-ivory shadow-md'
+                    ? 'bg-emerald-50 border-emerald-400 text-slate-900 shadow-xs'
                     : isDone
-                    ? 'bg-terra-mint/10 border-terra-mint/30 text-terra-mint'
-                    : 'bg-terra-deep/50 border-terra-border/30 text-terra-slate hover:text-terra-muted'
+                    ? 'bg-emerald-50/50 border-emerald-200 text-emerald-800'
+                    : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-700'
                 }`}
               >
                 <div
                   className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-mono shrink-0 ${
                     isCurrent
-                      ? 'bg-terra-mint text-terra-deep font-bold'
+                      ? 'bg-emerald-600 text-white font-bold'
                       : isDone
-                      ? 'bg-terra-mint/20 text-terra-mint'
-                      : 'bg-terra-deep text-terra-slate'
+                      ? 'bg-emerald-200 text-emerald-800'
+                      : 'bg-slate-200 text-slate-500'
                   }`}
                 >
                   {isDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx + 1}
                 </div>
                 <div className="min-w-0">
-                  <span className="block truncate text-[11px] leading-tight">{s.title}</span>
-                  <span className="text-[10px] text-terra-slate font-normal truncate hidden md:block">
+                  <span className="block truncate text-[11px] leading-tight text-slate-900">{s.title}</span>
+                  <span className="text-[10px] text-slate-500 font-normal truncate hidden md:block">
                     {s.subtitle}
                   </span>
                 </div>
@@ -295,8 +295,8 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
 
             {/* Project Selection / Switching */}
             {projects.length > 1 && onSelectProject && (
-              <div className="p-4 rounded-2xl bg-terra-deep/70 border border-terra-border/50 space-y-2">
-                <label className="block text-xs font-semibold text-terra-ivory">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <label className="block text-xs font-semibold text-slate-800">
                   Select Active Workspace:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -309,17 +309,17 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                         onClick={() => onSelectProject(p.id)}
                         className={`p-3 rounded-xl border text-left text-xs transition cursor-pointer flex items-center justify-between ${
                           isSelected
-                            ? 'bg-terra-forest border-terra-mint text-terra-ivory shadow-sm'
-                            : 'bg-terra-deep/60 border-terra-border/40 text-terra-muted hover:text-terra-ivory'
+                            ? 'bg-white border-emerald-400 text-slate-900 shadow-xs'
+                            : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300'
                         }`}
                       >
                         <div>
                           <span className="font-semibold block">{p.name}</span>
-                          <span className="text-[10px] text-terra-slate">
+                          <span className="text-[10px] text-slate-500">
                             {p.id === 'wayanad_pilot' ? 'Demo Watershed (Western Ghats)' : (p.study_area_type || 'Custom Area')}
                           </span>
                         </div>
-                        {isSelected && <CheckCircle2 className="w-4 h-4 text-terra-mint shrink-0" />}
+                        {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
                       </button>
                     );
                   })}
@@ -628,7 +628,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                           step="0.5"
                           value={cPrime}
                           onChange={(e) => setCPrime(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                         />
                       </div>
 
@@ -642,7 +642,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                           step="0.5"
                           value={phiDeg}
                           onChange={(e) => setPhiDeg(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                         />
                       </div>
 
@@ -656,7 +656,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                           step="0.5"
                           value={gammaKn}
                           onChange={(e) => setGammaKn(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                         />
                       </div>
 
@@ -670,7 +670,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                           step="0.1"
                           value={depthZ}
                           onChange={(e) => setDepthZ(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                         />
                       </div>
 
@@ -686,7 +686,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                           max="1"
                           value={waterM}
                           onChange={(e) => setWaterM(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                         />
                       </div>
 
@@ -700,7 +700,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                           step="0.1"
                           value={targetFs}
                           onChange={(e) => setTargetFs(parseFloat(e.target.value) || 1.3)}
-                          className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                         />
                       </div>
                     </div>
@@ -722,7 +722,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                           step="1000"
                           value={trKpa}
                           onChange={(e) => setTrKpa(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                         />
                       </div>
 
@@ -736,7 +736,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                           step="0.0005"
                           value={rar}
                           onChange={(e) => setRar(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                         />
                       </div>
                     </div>
@@ -750,7 +750,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                     <select
                       value={missingPolicy}
                       onChange={(e) => setMissingPolicy(e.target.value)}
-                      className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory text-xs font-mono focus:outline-none focus:border-terra-mint"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 text-xs font-mono focus:outline-none focus:border-emerald-500"
                     >
                       <option value="RENORMALIZE_AVAILABLE">
                         Adjust Scores Using Available Data (Recommended — redistributes weights)
@@ -777,7 +777,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                         max="60"
                         value={maxSlope}
                         onChange={(e) => setMaxSlope(parseFloat(e.target.value) || 45.0)}
-                        className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                       />
                     </div>
                     <div>
@@ -790,7 +790,7 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
                         step="50000"
                         value={totalBudget}
                         onChange={(e) => setTotalBudget(parseFloat(e.target.value) || 500000)}
-                        className="w-full bg-terra-deep border border-terra-border/60 rounded-xl px-3 py-2 text-terra-ivory font-mono focus:outline-none focus:border-terra-mint"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:border-emerald-500 focus:bg-white"
                       />
                     </div>
                   </div>
@@ -815,36 +815,36 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
 
             {/* Pre-flight Execution Summary */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-4 rounded-2xl bg-terra-deep/70 border border-terra-border/40 space-y-1">
-                <span className="text-terra-slate block text-[11px] font-mono uppercase">Study Area</span>
-                <span className="text-terra-ivory font-semibold block">{project?.name || 'Active Study Area'}</span>
-                <span className="text-terra-muted text-[11px]">~{approxHa.toLocaleString()} hectares</span>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-slate-500 block text-[11px] font-mono uppercase">Study Area</span>
+                <span className="text-slate-900 font-semibold block">{project?.name || 'Active Study Area'}</span>
+                <span className="text-slate-600 text-[11px]">~{approxHa.toLocaleString()} hectares</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-terra-deep/70 border border-terra-border/40 space-y-1">
-                <span className="text-terra-slate block text-[11px] font-mono uppercase">Resolution</span>
-                <span className="text-terra-ivory font-semibold block">{cellSize}m Grid Parcels</span>
-                <span className="text-terra-muted text-[11px]">~{((cellSize * cellSize) / 10000).toFixed(1)} ha per evaluation unit</span>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-slate-500 block text-[11px] font-mono uppercase">Resolution</span>
+                <span className="text-slate-900 font-semibold block">{cellSize}m Grid Parcels</span>
+                <span className="text-slate-600 text-[11px]">~{((cellSize * cellSize) / 10000).toFixed(1)} ha per evaluation unit</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-terra-deep/70 border border-terra-border/40 space-y-1">
-                <span className="text-terra-slate block text-[11px] font-mono uppercase">Priority Goal</span>
-                <span className="text-terra-ivory font-semibold block capitalize">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-slate-500 block text-[11px] font-mono uppercase">Priority Goal</span>
+                <span className="text-slate-900 font-semibold block capitalize">
                   {priorityPreset === 'balanced'
                     ? 'Balanced Restoration'
                     : priorityPreset === 'landslide'
                     ? 'Landslide Hazard Mitigation'
                     : 'Maximum Plantable Coverage'}
                 </span>
-                <span className="text-terra-muted text-[11px]">
+                <span className="text-slate-600 text-[11px]">
                   Need: {wNeed} | Gain: {wGain} | Area: {wArea} | Conf: {wConf}
                 </span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-terra-deep/70 border border-terra-border/40 space-y-1">
-                <span className="text-terra-slate block text-[11px] font-mono uppercase">Safety Threshold</span>
-                <span className="text-terra-ivory font-semibold block">Max Slope {maxSlope}°</span>
-                <span className="text-terra-muted text-[11px]">Target Stability Margin FS ≥ {targetFs}</span>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-slate-500 block text-[11px] font-mono uppercase">Safety Threshold</span>
+                <span className="text-slate-900 font-semibold block">Max Slope {maxSlope}°</span>
+                <span className="text-slate-600 text-[11px]">Target Stability Margin FS ≥ {targetFs}</span>
               </div>
             </div>
 
@@ -899,27 +899,27 @@ export const AnalysisWizardView: React.FC<AnalysisWizardViewProps> = ({
 
             {completedResults && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3.5 rounded-xl bg-terra-deep/70 border border-terra-border/40 text-center">
-                  <span className="text-terra-slate block text-[11px] mb-1">Evaluated Parcels</span>
-                  <span className="text-lg font-mono font-bold text-terra-ivory">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                  <span className="text-slate-500 block text-[11px] mb-1">Evaluated Parcels</span>
+                  <span className="text-lg font-mono font-bold text-slate-900">
                     {completedResults.total_parcels}
                   </span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-terra-deep/70 border border-terra-mint/30 text-center">
-                  <span className="text-terra-mint block text-[11px] mb-1 font-semibold">Recommended</span>
-                  <span className="text-lg font-mono font-bold text-emerald-400">
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                  <span className="text-emerald-800 block text-[11px] mb-1 font-semibold">Recommended</span>
+                  <span className="text-lg font-mono font-bold text-emerald-700">
                     {completedResults.eligible_count}
                   </span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-terra-deep/70 border border-terra-border/40 text-center">
-                  <span className="text-terra-slate block text-[11px] mb-1">Excluded</span>
-                  <span className="text-lg font-mono font-bold text-terra-slate">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                  <span className="text-slate-500 block text-[11px] mb-1">Excluded</span>
+                  <span className="text-lg font-mono font-bold text-slate-400">
                     {completedResults.excluded_count}
                   </span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-terra-deep/70 border border-terra-border/40 text-center">
-                  <span className="text-terra-slate block text-[11px] mb-1">Plantable Area</span>
-                  <span className="text-lg font-mono font-bold text-terra-ivory">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                  <span className="text-slate-500 block text-[11px] mb-1">Plantable Area</span>
+                  <span className="text-lg font-mono font-bold text-slate-900">
                     {(completedResults.total_plantable_area_ha || 0).toFixed(0)} ha
                   </span>
                 </div>

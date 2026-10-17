@@ -272,36 +272,35 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-fade-in">
       {/* Hero Banner */}
-      <div className="relative rounded-3xl overflow-hidden border border-terra-border/50 shadow-2xl bg-terra-forest/40 backdrop-blur-xl">
+      <div className="relative rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-gradient-to-br from-emerald-50/70 via-white to-sky-50/50">
         <div
-          className="absolute inset-0 bg-cover bg-bottom opacity-35 mix-blend-luminosity pointer-events-none"
+          className="absolute inset-0 bg-cover bg-bottom opacity-15 mix-blend-multiply pointer-events-none"
           style={{ backgroundImage: `url('/backgrounds/hero-layered-peaks.svg')` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-terra-deep/95 via-terra-deep/80 to-transparent pointer-events-none" />
 
         <div className="relative z-10 px-6 sm:px-8 py-8 md:py-10 max-w-3xl space-y-3.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/25 text-emerald-300 text-xs font-semibold backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/70 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             <span>GEOSPATIAL INTELLIGENCE & REFORESTATION DECISION SUPPORT</span>
           </div>
 
           <TextEffect
             as="h1"
             per="word"
-            className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white tracking-tight leading-tight"
+            className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-slate-900 tracking-tight leading-tight"
           >
             Understand terrain. Identify restoration opportunities. Explore evidence.
           </TextEffect>
 
-          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
+          <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-2xl font-normal">
             Select or draw any hillslope study area on the map. TerraShield connects Copernicus 30m elevation and Sentinel-2 vegetation bands to evaluate slope stability mechanics and rank root-reinforced reforestation parcels.
           </p>
 
-          {/* 4 Quick Actions */}
+          {/* 4 Quick Actions with Distinct Functional Colors */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
             <button
               onClick={onStartAnalysis}
-              className="p-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-semibold text-xs border border-emerald-400/40 transition flex flex-col gap-1 text-left cursor-pointer shadow-md shadow-emerald-950/60 group"
+              className="p-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs border border-emerald-600 transition flex flex-col gap-1 text-left cursor-pointer shadow-sm group"
             >
               <div className="flex items-center justify-between">
                 <span className="font-bold">New Analysis</span>
@@ -312,35 +311,35 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
             <button
               onClick={() => onNavigateTab?.('case-studies')}
-              className="p-3 rounded-xl bg-[#091f17]/90 hover:bg-emerald-900/40 text-emerald-300 font-semibold text-xs border border-emerald-500/25 transition flex flex-col gap-1 text-left cursor-pointer group"
+              className="p-3 rounded-xl bg-white hover:bg-amber-50/70 text-slate-800 font-semibold text-xs border border-slate-200 transition flex flex-col gap-1 text-left cursor-pointer shadow-2xs group"
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-white">Case Studies</span>
-                <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="font-bold text-slate-900">Case Studies</span>
+                <BookOpen className="w-3.5 h-3.5 text-amber-500" />
               </div>
-              <span className="text-[10px] text-slate-400 font-normal">Historical disasters</span>
+              <span className="text-[10px] text-slate-500 font-normal">Historical disasters</span>
             </button>
 
             <button
               onClick={() => onNavigateTab?.('map')}
-              className="p-3 rounded-xl bg-[#091f17]/90 hover:bg-emerald-900/40 text-emerald-300 font-semibold text-xs border border-emerald-500/25 transition flex flex-col gap-1 text-left cursor-pointer group"
+              className="p-3 rounded-xl bg-white hover:bg-sky-50/70 text-slate-800 font-semibold text-xs border border-slate-200 transition flex flex-col gap-1 text-left cursor-pointer shadow-2xs group"
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-white">Map Explorer</span>
-                <Compass className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="font-bold text-slate-900">Map Explorer</span>
+                <Compass className="w-3.5 h-3.5 text-sky-500" />
               </div>
-              <span className="text-[10px] text-slate-400 font-normal">Interactive parcels</span>
+              <span className="text-[10px] text-slate-500 font-normal">Interactive parcels</span>
             </button>
 
             <button
               onClick={onOpenDataLibrary}
-              className="p-3 rounded-xl bg-[#091f17]/90 hover:bg-emerald-900/40 text-emerald-300 font-semibold text-xs border border-emerald-500/25 transition flex flex-col gap-1 text-left cursor-pointer group"
+              className="p-3 rounded-xl bg-white hover:bg-indigo-50/70 text-slate-800 font-semibold text-xs border border-slate-200 transition flex flex-col gap-1 text-left cursor-pointer shadow-2xs group"
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-white">Recent Projects</span>
-                <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="font-bold text-slate-900">Recent Projects</span>
+                <Layers className="w-3.5 h-3.5 text-indigo-500" />
               </div>
-              <span className="text-[10px] text-slate-400 font-normal">Workspaces & data</span>
+              <span className="text-[10px] text-slate-500 font-normal">Workspaces & data</span>
             </button>
           </div>
         </div>
@@ -364,16 +363,16 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
 
           {/* Quick Step Indicators */}
-          <div className="flex items-center gap-2 text-xs font-mono text-terra-slate">
-            <span className="px-2.5 py-1 rounded-lg bg-terra-deep/70 border border-terra-border/40 text-terra-mint">
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
               1. Draw Area
             </span>
             <span>→</span>
-            <span className="px-2.5 py-1 rounded-lg bg-terra-deep/70 border border-terra-border/40 text-terra-ivory">
+            <span className="px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200 text-sky-700 font-semibold">
               2. One Click
             </span>
             <span>→</span>
-            <span className="px-2.5 py-1 rounded-lg bg-terra-deep/70 border border-terra-border/40 text-terra-mint">
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
               3. View Results
             </span>
           </div>
@@ -397,18 +396,18 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         {/* One-Click Action & Configuration Bar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
           {/* Selected Boundary Preview Card */}
-          <div className="p-5 rounded-2xl bg-terra-deep/70 border border-terra-border/50 space-y-3">
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-terra-slate font-mono flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-terra-mint" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
                 Selected Boundary
               </span>
               {selectedArea ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   Ready to Analyze
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                   Select on Map
                 </span>
               )}
@@ -417,14 +416,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             {selectedArea ? (
               <div className="space-y-2">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-display font-bold text-terra-mint">
+                  <span className="text-2xl font-display font-bold text-emerald-700">
                     {selectedArea.areaHa.toLocaleString()} ha
                   </span>
-                  <span className="text-xs text-terra-slate font-mono">
+                  <span className="text-xs text-slate-500 font-mono">
                     (~{(selectedArea.areaHa / 100).toFixed(2)} km²)
                   </span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-terra-forest/40 border border-terra-border/40 text-[11px] font-mono text-terra-slate space-y-0.5">
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-600 space-y-0.5">
                   <div>
                     West: {selectedArea.bounds.minx.toFixed(4)}° | East: {selectedArea.bounds.maxx.toFixed(4)}°
                   </div>
@@ -435,8 +434,8 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </div>
             ) : (
               <div className="py-4 text-center space-y-2">
-                <Compass className="w-8 h-8 text-terra-slate mx-auto opacity-50" />
-                <p className="text-xs text-terra-muted max-w-xs mx-auto">
+                <Compass className="w-8 h-8 text-slate-300 mx-auto" />
+                <p className="text-xs text-slate-600 max-w-xs mx-auto">
                   Click <strong>"Draw Polygon"</strong> or <strong>"Draw Box"</strong> in the top-left map toolbar to outline your study area.
                 </p>
               </div>
@@ -444,30 +443,30 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
 
           {/* Analysis Settings Card */}
-          <div className="p-5 rounded-2xl bg-terra-deep/70 border border-terra-border/50 space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-terra-slate font-mono flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-terra-mint" />
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-emerald-600" />
               Settings & Priority
             </span>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="col-span-2">
-                <label className="block text-[11px] text-terra-slate mb-1">Study Area Name (Optional)</label>
+                <label className="block text-[11px] text-slate-600 font-medium mb-1">Study Area Name (Optional)</label>
                 <input
                   type="text"
                   placeholder="e.g. Munnar Catchment Pilot"
                   value={analysisName}
                   onChange={(e) => setAnalysisName(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-terra-forest/60 border border-terra-border/50 text-terra-ivory text-xs placeholder:text-terra-slate focus:outline-none focus:border-terra-mint font-sans"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white font-sans"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-terra-slate mb-1">Priority Goal</label>
+                <label className="block text-[11px] text-slate-600 font-medium mb-1">Priority Goal</label>
                 <select
                   value={priorityPreset}
                   onChange={(e: any) => setPriorityPreset(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-terra-forest/60 border border-terra-border/50 text-terra-ivory text-xs focus:outline-none focus:border-terra-mint"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-emerald-500 focus:bg-white"
                 >
                   <option value="balanced">Balanced (Recommended)</option>
                   <option value="landslide">Landslide Mitigation</option>
@@ -476,11 +475,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-[11px] text-terra-slate mb-1">Soil Mechanics</label>
+                <label className="block text-[11px] text-slate-600 font-medium mb-1">Soil Mechanics</label>
                 <select
                   value={geotechPreset}
                   onChange={(e) => setGeotechPreset(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-terra-forest/60 border border-terra-border/50 text-terra-ivory text-xs focus:outline-none focus:border-terra-mint"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-emerald-500 focus:bg-white"
                 >
                   <option value="wayanad_saprolite">Monsoon Saprolite</option>
                   <option value="colluvial_clay_silt">Colluvial Clay-Silt</option>
@@ -489,7 +488,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </div>
 
               <div className="col-span-2">
-                <label className="block text-[11px] text-terra-slate mb-1">
+                <label className="block text-[11px] text-slate-600 font-medium mb-1">
                   Parcel Grid Resolution ({cellSizeM}m)
                 </label>
                 <input
@@ -499,19 +498,19 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                   step="50"
                   value={cellSizeM}
                   onChange={(e) => setCellSizeM(Number(e.target.value))}
-                  className="w-full accent-terra-mint cursor-pointer"
+                  className="w-full accent-emerald-600 cursor-pointer"
                 />
               </div>
             </div>
           </div>
 
           {/* Primary Action Button Card */}
-          <div className="p-5 rounded-2xl bg-terra-deep/70 border border-terra-border/50 flex flex-col justify-between space-y-4">
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-terra-slate font-mono">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono">
                 One-Click Pipeline
               </span>
-              <p className="text-xs text-terra-muted mt-1 leading-relaxed">
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                 Discovers real NASA/Copernicus elevation and Sentinel-2 bands, derives slope, and prioritizes parcels.
               </p>
             </div>
@@ -519,10 +518,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <button
               onClick={handleExecuteAutoAnalyze}
               disabled={!selectedArea || isAnalyzing}
-              className={`w-full py-4 rounded-xl font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-xl cursor-pointer ${
+              className={`w-full py-4 rounded-xl font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm cursor-pointer ${
                 !selectedArea || isAnalyzing
-                  ? 'bg-terra-border/50 text-terra-slate cursor-not-allowed'
-                  : 'bg-gradient-to-r from-terra-mint to-emerald-400 text-terra-deep font-bold hover:brightness-105 shadow-terra-mint/20 animate-pulse'
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20'
               }`}
             >
               {isAnalyzing ? (
@@ -542,28 +541,28 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
         {/* Real-time Analysis Progress Modal / Banner */}
         {isAnalyzing && (
-          <div className="p-6 rounded-2xl bg-terra-deep/95 border border-terra-mint/50 shadow-2xl space-y-4 animate-fade-in">
+          <div className="p-6 rounded-2xl bg-white border border-emerald-300 shadow-xl space-y-4 animate-fade-in">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Loader2 className="w-6 h-6 text-terra-mint animate-spin" />
+                <Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />
                 <div>
-                  <h3 className="font-display font-semibold text-terra-ivory text-base">
+                  <h3 className="font-display font-semibold text-slate-900 text-base">
                     Executing Geospatial & Geotechnical Pipeline
                   </h3>
-                  <p className="text-xs text-terra-mint font-mono mt-0.5">
+                  <p className="text-xs text-emerald-700 font-mono mt-0.5">
                     Step {currentStage} of 9: {stageTitle || STAGES[currentStage - 1]?.title}
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-mono font-bold text-terra-mint">
+              <span className="text-xs font-mono font-bold text-emerald-700">
                 {Math.round((currentStage / 9) * 100)}%
               </span>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full h-2 rounded-full bg-terra-forest/80 overflow-hidden">
+            <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-terra-mint to-emerald-400 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full"
                 style={{ width: `${(currentStage / 9) * 100}%` }}
               />
             </div>
@@ -716,35 +715,35 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-              <div className="p-3 rounded-xl bg-terra-deep/60 border border-terra-border/40">
-                <div className="flex items-center gap-1 text-terra-slate text-[11px] mb-1">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="flex items-center gap-1 text-slate-500 text-[11px] mb-1">
                   <span>Coordinate System</span>
                   <HelpTooltip
                     term="Coordinate System"
                     text="Defines how 3D geographic locations on Earth are represented on a 2D map."
                   />
                 </div>
-                <span className="font-mono text-terra-ivory font-semibold truncate block">
+                <span className="font-mono text-slate-900 font-semibold truncate block">
                   {activeProject?.native_crs || 'EPSG:4326 (WGS 84)'}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-terra-deep/60 border border-terra-border/40">
-                <div className="flex items-center gap-1 text-terra-slate text-[11px] mb-1">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="flex items-center gap-1 text-slate-500 text-[11px] mb-1">
                   <span>Soil & Terrain Preset</span>
                   <HelpTooltip
                     term="Geotechnical Preset"
                     text="Pre-calibrated soil mechanics assumptions including effective cohesion and internal friction angle."
                   />
                 </div>
-                <span className="text-terra-ivory font-semibold truncate block">
+                <span className="text-slate-900 font-semibold truncate block">
                   {activeProject?.geotechnical_parameters?.name || 'Tropical Monsoon Saprolite'}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-terra-deep/60 border border-terra-border/40">
-                <span className="text-terra-slate block text-[11px] mb-1">Saved Analyses</span>
-                <span className="font-mono text-terra-ivory font-semibold">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-500 block text-[11px] mb-1">Saved Analyses</span>
+                <span className="font-mono text-slate-900 font-semibold">
                   {activeProject?.saved_runs?.length || 0} run{activeProject?.saved_runs?.length === 1 ? '' : 's'}
                 </span>
               </div>

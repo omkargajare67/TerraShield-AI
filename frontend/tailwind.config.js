@@ -8,37 +8,37 @@ export default {
     extend: {
       colors: {
         forest: {
-          950: "#06100c",
-          900: "#091812", // Deep black-green surface
-          800: "#0c2119",
-          700: "#0f2b20", // Forest Green Panel
-          600: "#13382a",
-          500: "#10b981", // Electric Emerald
-          400: "#34d399", // Mint Accent
+          950: "#064e3b", // Deep botanical emerald
+          900: "#065f46",
+          800: "#047857",
+          700: "#059669",
+          600: "#10b981",
+          500: "#10b981",
+          400: "#34d399",
           300: "#6ee7b7",
-          200: "#a7f3d0", // Soft Mint
+          200: "#a7f3d0",
           100: "#d1fae5",
-          50: "#f0fdf4",
+          50: "#ecfdf5",
         },
         terra: {
-          base: "#06100c",      // Deepest background
-          dark: "#091812",      // Shell background
-          deep: "#091812",
-          surface: "#0c2119",   // Elevated surface
-          card: "#0f2a20",      // Card background
-          panel: "#123326",     // Panel surface
-          forest: "#0f2b20",
-          emerald: "#10b981",   // Electric Emerald Accent
-          mint: "#34d399",      // Vibrant Mint
-          cyan: "#38bdf8",      // Restrained Cyan Highlight
-          amber: "#fbbf24",     // Insufficient Data / Warning
-          rose: "#f43f5e",      // Excluded / Critical
-          ivory: "#f8fafc",     // Crisp High-contrast Typography
-          muted: "#94a3b8",     // Secondary text
-          slate: "#64748b",     // Muted labels
-          charcoal: "#16231d",
-          border: "rgba(52, 211, 153, 0.16)",
-          'border-subtle': "rgba(255, 255, 255, 0.08)",
+          base: "#f8fafc",      // Bright clean canvas (slate-50)
+          dark: "#f1f5f9",      // Secondary container (slate-100)
+          deep: "#f8fafc",      // Application main background
+          surface: "#ffffff",   // Crisp elevated card (pure white)
+          card: "#ffffff",      // Card background
+          panel: "#ffffff",     // Panel surface
+          forest: "#f1f5f9",    // Soft slate panel
+          emerald: "#059669",   // Crisp primary emerald
+          mint: "#10b981",      // Vibrant mint green
+          cyan: "#0284c7",      // Sky blue data accent
+          amber: "#d97706",     // Warm amber soil/warning
+          rose: "#e11d48",      // Hazard/Exclusion coral rose
+          ivory: "#0f172a",     // Ultra crisp dark text (slate-900)
+          muted: "#334155",     // Secondary text (slate-700)
+          slate: "#64748b",     // Labels and metadata (slate-500)
+          charcoal: "#475569",  // Slate-600
+          border: "#e2e8f0",    // Crisp border (slate-200)
+          'border-subtle': "#f1f5f9",
         }
       },
       fontFamily: {

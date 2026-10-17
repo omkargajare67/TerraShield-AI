@@ -317,18 +317,18 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         {/* Table Toolbar */}
         <div className="p-4 md:p-6 border-b border-terra-border/30 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="relative w-full md:w-80">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-terra-slate" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by parcel ID..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-terra-deep/70 border border-terra-border/60 text-terra-ivory text-xs placeholder:text-terra-slate focus:outline-none focus:border-terra-mint transition"
+              className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-terra-slate hover:text-terra-ivory"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -337,13 +337,13 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
 
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {/* Filter Toggle */}
-            <div className="flex items-center p-1 rounded-xl bg-terra-deep/60 border border-terra-border/40 text-xs">
+            <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono">
               <button
                 onClick={() => setFilterEligibility('all')}
                 className={`px-3 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                   filterEligibility === 'all'
-                    ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
-                    : 'text-terra-muted hover:text-terra-ivory'
+                    ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 All ({parcels.length})
@@ -352,8 +352,8 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 onClick={() => setFilterEligibility('eligible')}
                 className={`px-3 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                   filterEligibility === 'eligible'
-                    ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
-                    : 'text-terra-muted hover:text-terra-ivory'
+                    ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Recommended ({kpis.eligible})
@@ -362,8 +362,8 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 onClick={() => setFilterEligibility('excluded')}
                 className={`px-3 py-1.5 rounded-lg transition font-medium cursor-pointer ${
                   filterEligibility === 'excluded'
-                    ? 'bg-terra-forest text-terra-mint font-semibold shadow-sm'
-                    : 'text-terra-muted hover:text-terra-ivory'
+                    ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Excluded ({kpis.excluded})
@@ -374,7 +374,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 rounded-xl bg-terra-deep/70 border border-terra-border/60 text-terra-ivory text-xs font-mono focus:outline-none focus:border-terra-mint"
+              className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-mono focus:outline-none focus:border-emerald-500"
             >
               <option value="rank">Sort: Rank Priority</option>
               <option value="score">Sort: Priority Score</option>
@@ -384,7 +384,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
 
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="p-2 rounded-xl bg-terra-deep/70 border border-terra-border/60 text-terra-slate hover:text-terra-ivory text-xs font-mono transition cursor-pointer"
+              className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 text-xs font-mono transition cursor-pointer"
               title="Toggle sort direction"
             >
               {sortOrder === 'asc' ? '▲ Asc' : '▼ Desc'}
@@ -396,7 +396,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-terra-border/30 bg-terra-deep/40 text-terra-slate font-mono uppercase tracking-wider text-[11px]">
+              <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-mono uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4 font-medium">Rank</th>
                 <th className="py-3.5 px-4 font-medium">Parcel ID</th>
                 <th className="py-3.5 px-4 font-medium">
@@ -515,7 +515,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedParcel(null)}
-              className="fixed inset-0 bg-terra-deep/75 backdrop-blur-sm"
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
             />
 
             <motion.div
@@ -523,90 +523,90 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-md h-full bg-terra-forest/95 border-l border-terra-border/50 p-6 overflow-y-auto shadow-2xl flex flex-col justify-between"
+              className="relative w-full max-w-md h-full bg-white border-l border-slate-200 p-6 overflow-y-auto shadow-2xl flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-center justify-between pb-4 border-b border-terra-border/40 mb-6">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-6">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-terra-mint/20 text-terra-mint">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-100 text-emerald-800">
                         {selectedParcel.rank ? `Rank #${selectedParcel.rank}` : 'Unranked'}
                       </span>
                       {getIsEligible(selectedParcel) ? (
-                        <span className="text-[10px] font-semibold text-emerald-400">
+                        <span className="text-[10px] font-semibold text-emerald-600">
                           ● Recommended for Planting
                         </span>
                       ) : (
-                        <span className="text-[10px] font-semibold text-terra-slate">
+                        <span className="text-[10px] font-semibold text-slate-500">
                           ● Excluded from Priority Planting
                         </span>
                       )}
                     </div>
-                    <h3 className="text-xl font-display font-semibold text-terra-ivory">
+                    <h3 className="text-xl font-display font-semibold text-slate-900">
                       {selectedParcel.parcel_id}
                     </h3>
                   </div>
 
                   <button
                     onClick={() => setSelectedParcel(null)}
-                    className="p-1.5 rounded-xl bg-terra-deep/50 hover:bg-terra-deep text-terra-slate hover:text-terra-ivory border border-terra-border/40 transition"
+                    className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 border border-slate-200 transition"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 {/* Score Spotlight */}
-                <div className="p-4 rounded-2xl bg-terra-deep/70 border border-terra-border/40 mb-5 space-y-3">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-terra-slate">Priority Composite Score</span>
-                    <span className="text-xl font-mono font-bold text-terra-mint">
+                    <span className="text-xs text-slate-600">Priority Composite Score</span>
+                    <span className="text-xl font-mono font-bold text-emerald-600">
                       {(getScore(selectedParcel) * 100).toFixed(1)}%
                     </span>
                   </div>
-                  <div className="w-full bg-terra-border/40 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                     <div
-                      className="bg-terra-mint h-full rounded-full transition-all duration-500"
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                       style={{
                         width: `${Math.min(100, Math.max(0, getScore(selectedParcel) * 100))}%`,
                       }}
                     />
                   </div>
-                  <p className="text-[11px] text-terra-slate italic">
+                  <p className="text-[11px] text-slate-500 italic">
                     Primary Ranking Driver: {selectedParcel.primary_driver || 'Hillslope Stability Gain'}
                   </p>
                 </div>
 
                 {/* Plain Key Findings */}
                 <div className="space-y-3 mb-5">
-                  <h4 className="text-xs font-mono uppercase tracking-wider text-terra-mint font-semibold">
+                  <h4 className="text-xs font-mono uppercase tracking-wider text-emerald-700 font-semibold">
                     Key Location Assessment
                   </h4>
 
                   <div className="grid grid-cols-2 gap-2.5 text-xs">
-                    <div className="p-3 rounded-xl bg-terra-deep/50 border border-terra-border/30">
-                      <span className="text-terra-slate block mb-1">Plantable Area</span>
-                      <span className="font-mono text-sm font-semibold text-terra-ivory">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="text-slate-500 block mb-1">Plantable Area</span>
+                      <span className="font-mono text-sm font-semibold text-slate-900">
                         {getAreaHa(selectedParcel).toFixed(2)} ha
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-terra-deep/50 border border-terra-border/30">
-                      <span className="text-terra-slate block mb-1">Modeled Stability Gain</span>
-                      <span className="font-mono text-sm font-semibold text-emerald-400">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="text-slate-500 block mb-1">Modeled Stability Gain</span>
+                      <span className="font-mono text-sm font-semibold text-emerald-600">
                         {getDeltaFs(selectedParcel) > 0 ? `+${getDeltaFs(selectedParcel).toFixed(2)} ΔFS` : '—'}
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-terra-deep/50 border border-terra-border/30">
-                      <span className="text-terra-slate block mb-1">Baseline Stability</span>
-                      <span className="font-mono text-sm font-semibold text-terra-ivory">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="text-slate-500 block mb-1">Baseline Stability</span>
+                      <span className="font-mono text-sm font-semibold text-slate-900">
                         {(selectedParcel.baseline_fs ?? selectedParcel.fs_baseline_mean)?.toFixed(2) || '—'}
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-terra-deep/50 border border-terra-border/30">
-                      <span className="text-terra-slate block mb-1">Mean Slope</span>
-                      <span className="font-mono text-sm font-semibold text-terra-ivory">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="text-slate-500 block mb-1">Mean Slope</span>
+                      <span className="font-mono text-sm font-semibold text-slate-900">
                         {selectedParcel.slope_mean_deg !== undefined ? `${selectedParcel.slope_mean_deg.toFixed(1)}°` : '—'}
                       </span>
                     </div>
@@ -614,7 +614,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 </div>
 
                 {/* Expandable Technical Diagnostics */}
-                <div className="rounded-xl border border-terra-border/30 bg-terra-deep/30 overflow-hidden mb-5">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden mb-5">
                   <button
                     type="button"
                     onClick={() => setIsTechDetailsOpen(!isTechDetailsOpen)}

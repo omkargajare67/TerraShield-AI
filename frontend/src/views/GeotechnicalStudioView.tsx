@@ -248,12 +248,12 @@ export const GeotechnicalStudioView: React.FC<GeotechnicalStudioViewProps> = ({
                   onClick={() => applyPreset(key)}
                   className={`p-3 rounded-xl text-left border text-xs transition ${
                     selectedPresetKey === key
-                      ? 'bg-terra-forest border-terra-mint text-terra-ivory shadow-sm'
-                      : 'bg-terra-deep/50 border-terra-border/30 text-terra-muted hover:border-terra-border/60 hover:text-terra-ivory'
+                      ? 'bg-emerald-50 border-emerald-400 text-slate-900 shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-emerald-300 hover:text-slate-900'
                   }`}
                 >
                   <span className="font-semibold block">{preset.name}</span>
-                  <span className="text-[10px] text-terra-slate line-clamp-1 mt-0.5">
+                  <span className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
                     c'={preset.cohesion}kPa, &phi;'={preset.frictionAngle}&deg;
                   </span>
                 </button>
@@ -412,11 +412,11 @@ export const GeotechnicalStudioView: React.FC<GeotechnicalStudioViewProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs text-terra-muted">Slope Angle (&beta;):</span>
+                <span className="text-xs text-slate-600">Slope Angle (&beta;):</span>
                 <select
                   value={selectedSlope}
                   onChange={(e) => setSelectedSlope(parseInt(e.target.value))}
-                  className="px-3 py-1.5 rounded-xl bg-terra-deep border border-terra-border/60 text-terra-mint font-mono font-bold text-xs"
+                  className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-emerald-700 font-mono font-bold text-xs"
                 >
                   {[15, 20, 25, 30, 35, 40, 45].map((ang) => (
                     <option key={ang} value={ang}>
@@ -429,43 +429,43 @@ export const GeotechnicalStudioView: React.FC<GeotechnicalStudioViewProps> = ({
 
             {/* FS Metric Split */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-terra-deep/60 border border-terra-border/40 text-center">
-                <span className="text-[11px] text-terra-slate uppercase font-mono block mb-1">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                <span className="text-[11px] text-slate-500 uppercase font-mono block mb-1">
                   Baseline FS (Unreinforced)
                 </span>
                 <span
                   className={`text-2xl font-mono font-bold ${
-                    currentFS0 < 1.0 ? 'text-rose-400' : currentFS0 < 1.3 ? 'text-amber-400' : 'text-terra-ivory'
+                    currentFS0 < 1.0 ? 'text-rose-600' : currentFS0 < 1.3 ? 'text-amber-600' : 'text-slate-900'
                   }`}
                 >
                   {currentFS0.toFixed(2)}
                 </span>
-                <span className="text-[10px] block mt-1 text-terra-slate">
+                <span className="text-[10px] block mt-1 text-slate-500">
                   {currentFS0 < 1.0 ? 'Unstable (Failure)' : currentFS0 < 1.3 ? 'Marginal Stability' : 'Stable'}
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-terra-deep/60 border border-terra-mint/30 text-center">
-                <span className="text-[11px] text-terra-mint uppercase font-mono block mb-1">
+              <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 text-center">
+                <span className="text-[11px] text-emerald-800 uppercase font-mono block mb-1">
                   Reinforced FS (With Roots)
                 </span>
                 <span
                   className={`text-2xl font-mono font-bold ${
-                    currentFSRoot < 1.0 ? 'text-rose-400' : currentFSRoot < 1.3 ? 'text-amber-400' : 'text-emerald-400'
+                    currentFSRoot < 1.0 ? 'text-rose-600' : currentFSRoot < 1.3 ? 'text-amber-600' : 'text-emerald-700'
                   }`}
                 >
                   {currentFSRoot.toFixed(2)}
                 </span>
-                <span className="text-[10px] block mt-1 text-terra-mint font-semibold">
+                <span className="text-[10px] block mt-1 text-emerald-800 font-semibold">
                   {currentFSRoot < 1.0 ? 'Still Vulnerable' : currentFSRoot < 1.3 ? 'Improved' : 'Secure (FS &gt; 1.3)'}
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-terra-mint/10 border border-terra-mint/30 text-center">
-                <span className="text-[11px] text-emerald-300 uppercase font-mono block mb-1">
+              <div className="p-4 rounded-xl bg-emerald-100/60 border border-emerald-300 text-center">
+                <span className="text-[11px] text-emerald-900 uppercase font-mono block mb-1">
                   Net Stability Gain (&Delta;FS)
                 </span>
-                <span className="text-2xl font-mono font-bold text-emerald-300">
+                <span className="text-2xl font-mono font-bold text-emerald-700">
                   +{deltaFS.toFixed(2)}
                 </span>
                 <span className="text-[10px] block mt-1 text-emerald-400/80">
