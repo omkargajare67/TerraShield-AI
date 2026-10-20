@@ -66,3 +66,5 @@ data/artifacts/
 # Runtime project analysis workspaces
 data/projects/proj_*
 
+# Temporary raw task media
+large-thumbnail*.mp4

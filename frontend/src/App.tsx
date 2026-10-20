@@ -9,6 +9,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 // Layout & Common Components
 import { Navbar } from './components/common/Navbar';
 import { Sidebar, type ViewTab } from './components/common/Sidebar';
+import { BrandIntro } from './components/common/BrandIntro';
 
 // Views
 import { OverviewView } from './views/OverviewView';
@@ -22,6 +23,7 @@ import { ReportsView } from './views/ReportsView';
 import { SettingsView } from './views/SettingsView';
 
 export function App() {
+  const [showIntro, setShowIntro] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<ViewTab>('overview');
   const [projects, setProjects] = useState<ProjectMetadata[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -317,6 +319,10 @@ export function App() {
       setIsSubmittingProject(false);
     }
   };
+
+  if (showIntro) {
+    return <BrandIntro onComplete={() => setShowIntro(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-terra-deep text-terra-ivory font-sans flex flex-col selection:bg-terra-mint selection:text-terra-deep">

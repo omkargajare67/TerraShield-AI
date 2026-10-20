@@ -16,47 +16,47 @@
   "boundary_geojson": null,
   "layers": {
     "dem": {
-      "path": "C:\\TERRASHIELD AI\\data\\raw\\real\\wayanad_dem.tif",
+      "path": "D:\\TERRASHIELD AI\\data\\raw\\real\\wayanad_dem.tif",
       "status": "VERIFIED_OBSERVATION",
       "description": "NASA SRTM NASADEM Global 1 Arc-Second V001 (NASADEM_HGT_n11e076)"
     },
     "slope": {
-      "path": "C:\\TERRASHIELD AI\\data\\processed\\real\\wayanad_slope.tif",
+      "path": "D:\\TERRASHIELD AI\\data\\processed\\real\\wayanad_slope.tif",
       "status": "DERIVED_GEOSPATIAL",
       "description": "Horn's 8-neighbourhood gradient raster (30m)"
     },
     "aspect": {
-      "path": "C:\\TERRASHIELD AI\\data\\processed\\real\\wayanad_aspect.tif",
+      "path": "D:\\TERRASHIELD AI\\data\\processed\\real\\wayanad_aspect.tif",
       "status": "DERIVED_GEOSPATIAL",
       "description": "Topographic compass azimuth raster (30m)"
     },
     "ndvi": {
-      "path": "C:\\TERRASHIELD AI\\data\\processed\\real\\wayanad_ndvi.tif",
+      "path": "D:\\TERRASHIELD AI\\data\\processed\\real\\wayanad_ndvi.tif",
       "status": "DERIVED_GEOSPATIAL",
       "description": "Sentinel-2 BOA Normalized Difference Vegetation Index (10m)"
     },
     "fs_baseline": {
-      "path": "C:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_fs_baseline.tif",
+      "path": "D:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_fs_baseline.tif",
       "status": "ILLUSTRATIVE_SCENARIO",
       "description": "Infinite Slope Baseline Factor of Safety"
     },
     "fs_reinforced": {
-      "path": "C:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_fs_reinforced.tif",
+      "path": "D:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_fs_reinforced.tif",
       "status": "ILLUSTRATIVE_SCENARIO",
       "description": "Infinite Slope Root-Reinforced Factor of Safety"
     },
     "fs_delta": {
-      "path": "C:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_fs_delta.tif",
+      "path": "D:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_fs_delta.tif",
       "status": "ILLUSTRATIVE_SCENARIO",
       "description": "Modeled Factor of Safety Improvement"
     },
     "required_cohesion": {
-      "path": "C:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_required_cohesion.tif",
+      "path": "D:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_required_cohesion.tif",
       "status": "ILLUSTRATIVE_SCENARIO",
       "description": "Root cohesion needed for FS >= 1.3"
     },
     "tree_density": {
-      "path": "C:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_required_tree_density.tif",
+      "path": "D:\\TERRASHIELD AI\\data\\processed\\geotechnical\\wayanad_required_tree_density.tif",
       "status": "ILLUSTRATIVE_SCENARIO",
       "description": "Required Stem Density from linear RAR scaling"
     }

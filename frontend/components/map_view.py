@@ -1,6 +1,6 @@
 """Interactive Folium map component for TerraShield AI."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import folium
 from folium import GeoJsonTooltip, GeoJsonPopup
 
