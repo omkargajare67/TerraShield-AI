@@ -1,13 +1,26 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { ProjectMetadata, SystemHealth } from '../../api/types';
+import type { ViewTab } from './Sidebar';
 import {
   Search,
   Plus,
   Sparkles,
   RefreshCw,
   Folder,
-  Layers,
-  CloudOff,
+  ChevronDown,
+  Menu,
+  X,
+  Compass,
+  PlayCircle,
+  BookOpen,
+  BarChart3,
+  Sliders,
+  FileText,
+  Settings,
+  Database,
+  Home,
+  Shield,
+  ArrowRight,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -18,6 +31,8 @@ interface NavbarProps {
   health: SystemHealth | null;
   onRetryHealth?: () => void;
   onSearchSelect?: (query: string) => void;
+  currentTab?: ViewTab;
+  onTabChange?: (tab: ViewTab) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,28 +43,62 @@ export const Navbar: React.FC<NavbarProps> = ({
   health,
   onRetryHealth,
   onSearchSelect,
+  currentTab = 'overview',
+  onTabChange,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const toolsRef = useRef<HTMLDivElement>(null);
+
+  // Close tools dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (toolsRef.current && !toolsRef.current.contains(event.target as Node)) {
+        setIsToolsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const isHealthy = health?.status === 'healthy' || health?.status === 'ok';
-  const hasDemo = projects.some((p) => p.id === 'wayanad_pilot');
   const activeProj = projects.find((p) => p.id === selectedProjectId) || null;
 
-  // Search presets / quick suggestions
+  // Search suggestions
   const searchSuggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
-    const suggestions: Array<{ label: string; type: 'project' | 'preset' | 'parcel'; id: string }> = [];
+    const suggestions: Array<{ label: string; type: 'project' | 'preset' | 'tab'; id: string }> = [];
 
-    // Check existing projects
+    // Navigation shortcuts
+    const navItems: Array<{ label: string; tab: ViewTab }> = [
+      { label: 'Map Explorer', tab: 'map' },
+      { label: 'Analysis Wizard', tab: 'wizard' },
+      { label: 'Results & Rankings', tab: 'results' },
+      { label: 'Case Studies Library', tab: 'case-studies' },
+      { label: 'Geotechnical Studio', tab: 'geotech' },
+      { label: 'Reports & Audit', tab: 'reports' },
+      { label: 'Projects & Workspaces', tab: 'projects' },
+      { label: 'System Settings', tab: 'settings' },
+    ];
+
+    for (const nav of navItems) {
+      if (nav.label.toLowerCase().includes(q)) {
+        suggestions.push({ label: nav.label, type: 'tab', id: nav.tab });
+      }
+    }
+
+    // Projects
     for (const p of projects) {
       if (p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)) {
         suggestions.push({ label: p.name, type: 'project', id: p.id });
       }
     }
 
-    // Common geographic catchments
+    // Presets
     const presets = [
       { name: 'Wayanad Meppadi (Kerala)', id: 'wayanad_pilot' },
       { name: 'Malin Disaster AOI (Maharashtra)', id: 'proj_case_malin_2014' },
@@ -64,11 +113,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       }
     }
 
-    return suggestions.slice(0, 5);
+    return suggestions.slice(0, 6);
   }, [searchQuery, projects]);
 
   const handleSuggestionClick = (item: { label: string; type: string; id: string }) => {
-    if (item.type === 'project' || item.type === 'preset') {
+    if (item.type === 'tab' && onTabChange) {
+      onTabChange(item.id as ViewTab);
+    } else if (item.type === 'project' || item.type === 'preset') {
       const match = projects.find((p) => p.id === item.id);
       if (match) {
         onSelectProject(match.id);
@@ -81,56 +132,146 @@ export const Navbar: React.FC<NavbarProps> = ({
     setIsSearchFocused(false);
   };
 
-  return (
-    <header className="h-16 px-4 sm:px-6 border-b border-slate-200 bg-white/95 backdrop-blur-xl flex items-center justify-between z-30 sticky top-0 shadow-xs">
-      {/* Left: Study Area Context / Breadcrumb */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-slate-700 shadow-xs">
-          <Layers className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-          <span className="text-[11px] text-slate-500 font-mono hidden md:inline">Workspace:</span>
-          <span className="font-semibold text-emerald-900 truncate max-w-[140px] sm:max-w-[200px]">
-            {activeProj?.name || 'No Project Active'}
-          </span>
-          {activeProj?.study_area_type && (
-            <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-white text-emerald-700 border border-emerald-200 font-bold uppercase tracking-wider hidden lg:inline shadow-2xs">
-              {activeProj.study_area_type}
-            </span>
-          )}
-        </div>
-      </div>
+  const primaryTabs: Array<{ id: ViewTab; label: string; icon: React.FC<{ className?: string }> }> = [
+    { id: 'overview', label: 'Overview', icon: Home },
+    { id: 'map', label: 'Map Explorer', icon: Compass },
+    { id: 'wizard', label: 'Analysis Wizard', icon: PlayCircle },
+    { id: 'case-studies', label: 'Case Studies', icon: BookOpen },
+    { id: 'results', label: 'Results', icon: BarChart3 },
+  ];
 
-      {/* Middle: Universal Search Bar & Active Project Selector */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-xl mx-4">
-        {/* Search Input with Autocomplete */}
-        <div className="relative flex-1">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition shadow-xs">
-            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+  const secondaryTabs: Array<{ id: ViewTab; label: string; desc: string; icon: React.FC<{ className?: string }> }> = [
+    { id: 'geotech', label: 'Geotechnical Studio', desc: 'Slope stability & root mechanics', icon: Sliders },
+    { id: 'reports', label: 'Reports & Exports', desc: 'Audit packages & spatial downloads', icon: FileText },
+    { id: 'projects', label: 'Projects & Data', desc: 'Workspaces & layer library', icon: Database },
+    { id: 'settings', label: 'Settings', desc: 'Environment & calibration', icon: Settings },
+  ];
+
+  const isSecondaryActive = secondaryTabs.some((t) => t.id === currentTab);
+
+  return (
+    <header className="relative z-40 bg-[#071c17]/95 backdrop-blur-md border-b border-white/10 text-white px-4 sm:px-6 py-3 transition-colors">
+      <div className="max-w-[1680px] mx-auto flex items-center justify-between gap-4">
+        {/* Left Side: Brand & Horizontal Nav Links */}
+        <div className="flex items-center gap-6 lg:gap-8">
+          {/* Brand Wordmark */}
+          <button
+            onClick={() => onTabChange?.('overview')}
+            className="flex items-center gap-3 text-left group cursor-pointer"
+          >
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/40 border border-emerald-400/30">
+              <Shield className="w-5 h-5 text-emerald-100 group-hover:scale-105 transition-transform" />
+            </div>
+            <div>
+              <span className="font-display font-bold text-base sm:text-lg tracking-tight text-white block leading-tight">
+                TerraShield <span className="text-emerald-400 font-medium">AI</span>
+              </span>
+              <span className="text-[9.5px] font-mono tracking-widest text-emerald-300/80 uppercase block">
+                GEOSPATIAL INTELLIGENCE
+              </span>
+            </div>
+          </button>
+
+          {/* Primary Navigation Links (Desktop) */}
+          <nav className="hidden xl:flex items-center gap-1.5" aria-label="Primary Navigation">
+            {primaryTabs.map((tab) => {
+              const isActive = currentTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange?.(tab.id)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-white/15 text-white font-semibold border border-white/20 shadow-xs'
+                      : 'text-emerald-100/75 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <tab.icon className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+
+            {/* Secondary Tools Dropdown */}
+            <div className="relative" ref={toolsRef}>
+              <button
+                onClick={() => setIsToolsOpen(!isToolsOpen)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  isSecondaryActive || isToolsOpen
+                    ? 'bg-white/15 text-white font-semibold border border-white/20 shadow-xs'
+                    : 'text-emerald-100/75 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <span>Modules</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isToolsOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isToolsOpen && (
+                <div className="absolute top-full left-0 mt-2 w-64 rounded-2xl bg-[#09221c] border border-white/15 shadow-2xl p-2 z-50 animate-fade-in text-white">
+                  <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold border-b border-white/10">
+                    Scientific &amp; System Modules
+                  </div>
+                  <div className="py-1 space-y-1">
+                    {secondaryTabs.map((t) => {
+                      const isActive = currentTab === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => {
+                            onTabChange?.(t.id);
+                            setIsToolsOpen(false);
+                          }}
+                          className={`w-full text-left p-2.5 rounded-xl transition cursor-pointer flex items-start gap-2.5 ${
+                            isActive
+                              ? 'bg-emerald-600/30 text-white border border-emerald-400/30'
+                              : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          <t.icon className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                          <div>
+                            <div className="text-xs font-semibold">{t.label}</div>
+                            <div className="text-[11px] text-emerald-200/60 leading-tight">{t.desc}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </nav>
+        </div>
+
+        {/* Center: Universal Quick Search (Desktop) */}
+        <div className="hidden lg:block relative max-w-xs xl:max-w-sm w-full mx-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-white focus-within:bg-white/20 focus-within:border-emerald-400 transition">
+            <Search className="w-3.5 h-3.5 text-emerald-300/80 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-              placeholder="Search study area, case study, district..."
-              aria-label="Search locations or projects"
-              className="bg-transparent text-slate-900 placeholder-slate-400 font-sans text-xs focus:outline-none w-full"
+              placeholder="Search study area, module, or basin..."
+              aria-label="Search study areas and modules"
+              className="bg-transparent text-white placeholder-emerald-200/50 text-xs focus:outline-none w-full"
             />
           </div>
 
           {/* Autocomplete Dropdown */}
           {isSearchFocused && searchSuggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1.5 rounded-xl bg-white border border-slate-200 shadow-2xl p-1.5 z-50">
-              <div className="px-2 py-1 text-[10px] font-mono uppercase text-emerald-700 font-bold">
-                Matching Areas & Projects
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-[#09221c] border border-white/15 shadow-2xl p-2 z-50 text-white">
+              <div className="px-2.5 py-1 text-[10px] font-mono uppercase text-emerald-400 font-bold">
+                Matching Areas &amp; Modules
               </div>
               {searchSuggestions.map((s, idx) => (
                 <button
                   key={idx}
                   onMouseDown={() => handleSuggestionClick(s)}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-slate-100 text-slate-800 hover:text-slate-900 flex items-center justify-between transition cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-white/10 text-slate-100 flex items-center justify-between transition cursor-pointer"
                 >
                   <span className="truncate">{s.label}</span>
-                  <span className="text-[9px] font-mono uppercase text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  <span className="text-[9.5px] font-mono uppercase px-2 py-0.5 rounded bg-white/10 text-emerald-300 border border-white/10">
                     {s.type}
                   </span>
                 </button>
@@ -139,85 +280,142 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
 
-        {/* Project Selector Dropdown */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs shrink-0 shadow-xs">
-          <Folder className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-          <select
-            value={selectedProjectId || ''}
-            onChange={(e) => onSelectProject(e.target.value)}
-            aria-label="Select active project workspace"
-            className="bg-transparent text-slate-800 font-medium text-xs focus:outline-none cursor-pointer max-w-[150px] md:max-w-[190px] truncate"
+        {/* Right Side: Workspace Project Dropdown + Engine Status + Primary CTA */}
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          {/* Active Workspace Selector */}
+          <div
+            title={activeProj ? `Active Workspace: ${activeProj.name}` : 'Select Workspace'}
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-emerald-100"
           >
-            {projects.map((p) => (
-              <option key={p.id} value={p.id} className="bg-white text-slate-900">
-                {p.name} {p.id === 'wayanad_pilot' ? '(Demo Catchment)' : ''}
-              </option>
-            ))}
-            {projects.length === 0 && (
-              <option value="" className="bg-white text-slate-400">
-                No Projects Found
-              </option>
-            )}
-          </select>
-        </div>
-
-        {/* Quick Actions */}
-        {hasDemo && selectedProjectId !== 'wayanad_pilot' && (
-          <button
-            onClick={() => onSelectProject('wayanad_pilot')}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200 transition shadow-xs cursor-pointer"
-            title="Load Wayanad Pilot demonstration project"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Load Demo Area</span>
-          </button>
-        )}
-
-        <button
-          onClick={onOpenCreateModal}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold border border-emerald-600 transition shadow-xs shrink-0 cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">New Project</span>
-        </button>
-      </div>
-
-      {/* Right Side: Environmental Feeds & Engine Status */}
-      <div className="flex items-center gap-3 shrink-0">
-        {/* Environmental Feeds: Real Disclosure (No Invented Data) */}
-        <div className="hidden 2xl:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-mono text-slate-500" title="Environmental sensor feeds (live telemetry) are not currently connected to this station.">
-          <CloudOff className="w-3 h-3 text-slate-400" />
-          <span>Telemetry: Feeds Offline</span>
-        </div>
-
-        {/* Engine Status indicator */}
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-mono">
-          <span
-            className={`w-2 h-2 rounded-full ${
-              isHealthy
-                ? 'bg-emerald-500 shadow-xs shadow-emerald-500 animate-pulse'
-                : 'bg-amber-500'
-            }`}
-          />
-          <span className="text-slate-700 font-medium hidden sm:inline">
-            {isHealthy ? 'Engine Online' : 'Engine Offline'}
-          </span>
-          {health?.version && (
-            <span className="text-slate-400 text-[10px] hidden md:inline">
-              v{health.version}
-            </span>
-          )}
-          {!isHealthy && onRetryHealth && (
-            <button
-              onClick={onRetryHealth}
-              className="p-0.5 hover:text-emerald-600 transition"
-              title="Retry Health Check"
+            <Folder className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <select
+              value={selectedProjectId || ''}
+              onChange={(e) => onSelectProject(e.target.value)}
+              aria-label="Select active project workspace"
+              className="bg-transparent text-emerald-100 font-medium text-xs focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[170px] truncate"
             >
-              <RefreshCw className="w-3 h-3" />
-            </button>
-          )}
+              {projects.map((p) => (
+                <option key={p.id} value={p.id} className="bg-[#09221c] text-white">
+                  {p.name} {p.id === 'wayanad_pilot' ? '(Demo)' : ''}
+                </option>
+              ))}
+              {projects.length === 0 && (
+                <option value="" className="bg-[#09221c] text-slate-400">
+                  No Projects Found
+                </option>
+              )}
+            </select>
+          </div>
+
+          {/* New Project Button */}
+          <button
+            onClick={onOpenCreateModal}
+            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-emerald-200 text-xs font-medium transition flex items-center gap-1 cursor-pointer"
+            title="Create New Project Workspace"
+          >
+            <Plus className="w-3.5 h-3.5 text-emerald-300" />
+            <span className="hidden sm:inline">New Area</span>
+          </button>
+
+          {/* Engine Status indicator */}
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[11px] font-mono">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isHealthy
+                  ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse'
+                  : 'bg-amber-400'
+              }`}
+            />
+            <span className="text-emerald-100 font-medium">
+              {isHealthy ? 'Engine Online' : 'Engine Offline'}
+            </span>
+            {!isHealthy && onRetryHealth && (
+              <button
+                onClick={onRetryHealth}
+                className="p-0.5 hover:text-emerald-300 transition"
+                title="Retry Health Check"
+              >
+                <RefreshCw className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Primary Action Button (Reference Design Inspired Pill Button) */}
+          <button
+            onClick={() => onTabChange?.('wizard')}
+            className="px-4 sm:px-5 py-2 rounded-full bg-white text-[#0a2e24] hover:bg-emerald-50 text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer group"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Analyse a Site</span>
+            <ArrowRight className="w-3 h-3 text-emerald-800 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+
+          {/* Mobile Hamburger Menu Toggle */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="xl:hidden p-2 rounded-xl bg-white/10 text-emerald-200 hover:text-white hover:bg-white/20 transition cursor-pointer"
+            aria-label="Toggle navigation menu"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Responsive Navigation Drawer */}
+      {isMobileMenuOpen && (
+        <div className="xl:hidden mt-3 pt-3 border-t border-white/15 animate-fade-in space-y-4">
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {primaryTabs.map((tab) => {
+              const isActive = currentTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    onTabChange?.(tab.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`p-2.5 rounded-xl transition text-left flex items-center gap-2 ${
+                    isActive
+                      ? 'bg-emerald-600 text-white font-semibold'
+                      : 'bg-white/10 text-emerald-100 hover:bg-white/20'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4 text-emerald-300" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="border-t border-white/10 pt-2">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold mb-2">
+              Advanced Modules
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {secondaryTabs.map((tab) => {
+                const isActive = currentTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      onTabChange?.(tab.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`p-2.5 rounded-xl transition text-left flex items-center gap-2 ${
+                      isActive
+                        ? 'bg-emerald-600 text-white font-semibold'
+                        : 'bg-white/10 text-emerald-100 hover:bg-white/20'
+                    }`}
+                  >
+                    <tab.icon className="w-4 h-4 text-emerald-300" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

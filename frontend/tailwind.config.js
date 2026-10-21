@@ -21,24 +21,31 @@ export default {
           50: "#ecfdf5",
         },
         terra: {
-          base: "#f8fafc",      // Bright clean canvas (slate-50)
-          dark: "#f1f5f9",      // Secondary container (slate-100)
-          deep: "#f8fafc",      // Application main background
+          base: "#f7faf7",      // Warm off-white canvas
+          canvas: "#f7faf7",    // Warm off-white canvas
+          dark: "#eef3ef",      // Secondary soft sage container
+          deep: "#061e18",      // Deep evergreen / forest
+          evergreen: "#071b15", // Darkest evergreen
           surface: "#ffffff",   // Crisp elevated card (pure white)
           card: "#ffffff",      // Card background
           panel: "#ffffff",     // Panel surface
-          forest: "#f1f5f9",    // Soft slate panel
-          emerald: "#059669",   // Crisp primary emerald
+          forest: "#0d3b32",    // Deep forest green
+          forestLight: "#144a40",
+          teal: "#114b43",      // Muted teal
+          tealMuted: "#1a5e54",
+          sage: "#dbe7df",      // Soft sage accent
+          sageLight: "#edf4ef", // Very light sage tint
+          emerald: "#0d5c48",   // Crisp primary emerald
           mint: "#10b981",      // Vibrant mint green
           cyan: "#0284c7",      // Sky blue data accent
           amber: "#d97706",     // Warm amber soil/warning
-          rose: "#e11d48",      // Hazard/Exclusion coral rose
-          ivory: "#0f172a",     // Ultra crisp dark text (slate-900)
-          muted: "#334155",     // Secondary text (slate-700)
-          slate: "#64748b",     // Labels and metadata (slate-500)
-          charcoal: "#475569",  // Slate-600
-          border: "#e2e8f0",    // Crisp border (slate-200)
-          'border-subtle': "#f1f5f9",
+          rose: "#dc2626",      // Hazard/Exclusion coral rose
+          ivory: "#15201b",     // Deep dark charcoal text (slate-900 equivalent)
+          muted: "#4e6157",     // Secondary text (slate-700)
+          slate: "#6b7e74",     // Labels and metadata (slate-500)
+          charcoal: "#15201b",  // Slate-600
+          border: "#dce6df",    // Crisp border
+          'border-subtle': "#edf3ee",
         }
       },
       fontFamily: {

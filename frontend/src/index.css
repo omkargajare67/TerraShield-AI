@@ -7,20 +7,21 @@
 
 :root {
   color-scheme: light;
-  --bg-primary: #f8fafc;
-  --bg-deep: #f8fafc;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --accent-emerald: #059669;
+  --bg-primary: #f7faf7;
+  --bg-deep: #061e18;
+  --text-primary: #15201b;
+  --text-secondary: #4e6157;
+  --accent-emerald: #0d5c48;
   --accent-mint: #10b981;
+  --accent-teal: #114b43;
   --accent-cyan: #0284c7;
 }
 
 body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #071511;
+  color: #15201b;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -32,41 +33,41 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #edf3ee;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #cbd5ce;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #94a89c;
 }
 
 /* Modern Bright Surface & Card Classes */
 .glass-panel-deep {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+  border: 1px solid #dce6df;
+  box-shadow: 0 4px 16px -2px rgba(10, 36, 28, 0.04);
 }
 
 .glass-panel-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.04);
+  border: 1px solid #dce6df;
+  box-shadow: 0 2px 8px -1px rgba(10, 36, 28, 0.04);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-panel-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.08);
+  border-color: #b5c7bc;
+  box-shadow: 0 10px 25px -4px rgba(10, 36, 28, 0.08);
 }
 
 .glass-panel-toolbar {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 8px 24px -2px rgba(15, 23, 42, 0.08);
+  border: 1px solid #dce6df;
+  box-shadow: 0 8px 24px -2px rgba(10, 36, 28, 0.08);
 }
 
 .glow-emerald {
